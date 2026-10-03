@@ -1,0 +1,102 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-title>You</ion-title>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    @if (auth.user(); as user) {
+      <section class="profile tb-glass tb-pattern">
+        <app-avatar [name]="user.username" [src]="user.pictureUrl" [size]="72" />
+        <div class="who">
+          <h1 class="tb-display">{{ user.displayName }}</h1>
+          <p class="tb-muted">{{ '@' + user.username }}</p>
+          <div class="tb-chip-row">
+            @if (user.role !== 'user') {
+              <span class="tb-chip"><ion-icon name="shield-checkmark-outline" /> {{ user.role === 'admin' ? 'Admin' : 'Moderator' }}</span>
+            }
+            <a class="tb-chip" [routerLink]="['/users', user.id]">Your public page</a>
+            <a class="tb-chip" routerLink="/account">Edit profile</a>
+          </div>
+        </div>
+      </section>
+
+      @if (user.emailVerified === false) {
+        <a class="tb-alert verify" routerLink="/verify-email">
+          <ion-icon name="mail-outline" />Please confirm your email address. Tap to enter the code we sent.
+        </a>
+      }
+
+      <!-- Streak -->
+      @if (reading.status() === 'ready') {
+        @let r = reading.data()!;
+        <section class="streak tb-tile">
+          <div class="flame" [class.lit]="r.streak.readToday">
+            <ion-icon [name]="r.streak.readToday ? 'flame' : 'flame-outline'" aria-hidden="true" />
+          </div>
+          <div class="streak-text">
+            <b>{{ r.streak.current }} day{{ r.streak.current === 1 ? '' : 's' }} in a row</b>
+            <small class="tb-muted">
+              Longest {{ r.streak.longest }} ·
+              {{ r.streak.readToday ? 'You read today' : 'Read an ayah today to keep it going' }}
+            </small>
+          </div>
+          @if (r.position && positionSurah(); as s) {
+            <ion-button size="small" [routerLink]="['/quran', s.number]" [queryParams]="{ ayah: r.position.ayah }">
+              Continue {{ s.name }} {{ r.position.ayah }}
+            </ion-button>
+          } @else {
+            <ion-button size="small" fill="outline" routerLink="/quran">Start reading</ion-button>
+          }
+        </section>
+      }
+
+      <nav class="tiles" aria-label="Your things">
+        <a class="tile tb-tile" routerLink="/notifications">
+          <span class="ti"><ion-icon name="notifications-outline" /></span>
+          <span class="tt"><b>Notifications</b><small>Likes, comments, new followers</small></span>
+          @if (badge.unread()) {
+            <span class="count">{{ badge.unread() }}</span>
+          }
+        </a>
+        @for (t of tiles; track t.link) {
+          <a class="tile tb-tile" [routerLink]="t.link">
+            <span class="ti"><ion-icon [name]="t.icon" /></span>
+            <span class="tt"><b>{{ t.label }}</b><small>{{ t.hint }}</small></span>
+          </a>
+        }
+        @if (auth.isModerator()) {
+          <a class="tile tb-tile" routerLink="/moderation">
+            <span class="ti"><ion-icon name="flag-outline" /></span>
+            <span class="tt"><b>Moderation</b><small>Reported reflections</small></span>
+          </a>
+        }
+        @if (auth.isAdmin()) {
+          <a class="tile tb-tile" routerLink="/admin/users">
+            <span class="ti"><ion-icon name="people-outline" /></span>
+            <span class="tt"><b>All users</b><small>Admin list of accounts</small></span>
+          </a>
+        }
+        <a class="tile tb-tile" routerLink="/account">
+          <span class="ti"><ion-icon name="key-outline" /></span>
+          <span class="tt"><b>Account and security</b><small>Profile, password, two-step, your data</small></span>
+        </a>
+        <a class="tile tb-tile" routerLink="/settings">
+          <span class="ti"><ion-icon name="settings-outline" /></span>
+          <span class="tt"><b>Settings</b><small>Theme, Quran script, text size</small></span>
+        </a>
+      </nav>
+
+      <ion-button fill="outline" expand="block" (click)="logout()">
+        <ion-icon slot="start" name="log-out-outline" />Log out
+      </ion-button>
+    } @else if (auth.isLoggedIn()) {
+      <p class="tb-muted center">Loading your profile…</p>
+    } @else {
+      <app-auth-prompt />
+      <ion-button fill="clear" routerLink="/settings" expand="block"><ion-icon slot="start" name="settings-outline" />Settings</ion-button>
+    }
+  </div>
+</ion-content>

@@ -2,7 +2,7 @@
   <ion-toolbar>
     <ion-buttons slot="start"><ion-back-button defaultHref="/quran" text="" /></ion-buttons>
     <ion-title>{{ surah()?.name ?? 'Surah' }}</ion-title>
-    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -19,25 +19,33 @@
         }
       </section>
 
-      <!-- Display controls -->
-      <div class="controls" role="toolbar" aria-label="Reading display">
-        <ion-button
-          size="small"
-          [fill]="settings.showTranslation() ? 'solid' : 'outline'"
-          (click)="settings.setShowTranslation(!settings.showTranslation())"
-          [attr.aria-pressed]="settings.showTranslation()"
-        >
-          <ion-icon slot="start" name="language-outline" />English
-        </ion-button>
-        <span class="size">
-          <ion-button size="small" fill="clear" (click)="changeSize(-1)" [disabled]="settings.arabicSize() <= sizes.min" aria-label="Smaller Arabic text">
-            <ion-icon slot="icon-only" name="remove-outline" />
+      <!-- Display controls: the Arabic is always shown; English and transliteration are extra lines. -->
+      <div class="controls tb-tile" role="toolbar" aria-label="Reading display">
+        <ion-select class="script" label="Arabic script" labelPlacement="stacked" interface="popover"
+          [value]="settings.arabicType()" (ionChange)="setScript($event.detail.value)">
+          @for (sc of scripts; track sc.type) {
+            <ion-select-option [value]="sc.type">{{ sc.name }}</ion-select-option>
+          }
+        </ion-select>
+        <div class="extras">
+          <ion-button size="small" [fill]="settings.showTranslation() ? 'solid' : 'outline'"
+            (click)="settings.setShowTranslation(!settings.showTranslation())" [attr.aria-pressed]="settings.showTranslation()">
+            <ion-icon slot="start" name="language-outline" />English
           </ion-button>
-          <span class="size-label" lang="ar">أ</span>
-          <ion-button size="small" fill="clear" (click)="changeSize(1)" [disabled]="settings.arabicSize() >= sizes.max" aria-label="Larger Arabic text">
-            <ion-icon slot="icon-only" name="add-outline" />
+          <ion-button size="small" [fill]="settings.showTransliteration() ? 'solid' : 'outline'"
+            (click)="settings.setShowTransliteration(!settings.showTransliteration())" [attr.aria-pressed]="settings.showTransliteration()">
+            Aa Transliteration
           </ion-button>
-        </span>
+          <span class="size">
+            <ion-button size="small" fill="clear" (click)="changeSize(-1)" [disabled]="settings.arabicSize() <= sizes.min" aria-label="Smaller Arabic text">
+              <ion-icon slot="icon-only" name="remove-outline" />
+            </ion-button>
+            <span class="size-label" lang="ar">أ</span>
+            <ion-button size="small" fill="clear" (click)="changeSize(1)" [disabled]="settings.arabicSize() >= sizes.max" aria-label="Larger Arabic text">
+              <ion-icon slot="icon-only" name="add-outline" />
+            </ion-button>
+          </span>
+        </div>
       </div>
 
       <!-- Ayahs -->
@@ -49,17 +57,29 @@
                 <div class="ayah-bar">
                   <span class="tb-chip">{{ v.surah }}:{{ v.ayah }}</span>
                   <span class="ayah-actions">
-                    <ion-button size="small" fill="clear" [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }" [attr.aria-label]="'Reflections on ' + v.surah + ':' + v.ayah">
+                    <ion-button size="small" fill="clear" [class.on]="library.isLiked(v.surah, v.ayah)" (click)="toggleLike(v)"
+                      [attr.aria-pressed]="library.isLiked(v.surah, v.ayah)" [attr.aria-label]="'Like ' + v.surah + ':' + v.ayah">
+                      <ion-icon slot="icon-only" [name]="library.isLiked(v.surah, v.ayah) ? 'heart' : 'heart-outline'" />
+                    </ion-button>
+                    <ion-button size="small" fill="clear" [class.on]="library.isBookmarked(v.surah, v.ayah)" (click)="toggleBookmark(v)"
+                      [attr.aria-pressed]="library.isBookmarked(v.surah, v.ayah)" [attr.aria-label]="'Bookmark ' + v.surah + ':' + v.ayah">
+                      <ion-icon slot="icon-only" [name]="library.isBookmarked(v.surah, v.ayah) ? 'bookmark' : 'bookmark-outline'" />
+                    </ion-button>
+                    <ion-button size="small" fill="clear" [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }"
+                      [attr.aria-label]="'Reflections on ' + v.surah + ':' + v.ayah">
                       <ion-icon slot="icon-only" name="chatbubbles-outline" />
                     </ion-button>
-                    <ion-button size="small" fill="clear" (click)="copy(v)" [attr.aria-label]="'Copy ' + v.surah + ':' + v.ayah">
-                      <ion-icon slot="icon-only" name="copy-outline" />
+                    <ion-button size="small" fill="clear" (click)="more(v)" [attr.aria-label]="'More for ' + v.surah + ':' + v.ayah">
+                      <ion-icon slot="icon-only" name="ellipsis-horizontal" />
                     </ion-button>
                   </span>
                 </div>
                 <p class="ar tb-quran" lang="ar" [style.font-size.px]="settings.arabicSize()">
                   {{ v.textAr }}<app-ayah-marker [number]="v.ayah" />
                 </p>
+                @if (settings.showTransliteration() && v.transliteration) {
+                  <p class="tl" lang="ar-Latn">{{ v.transliteration }}</p>
+                }
                 @if (settings.showTranslation() && v.translation) {
                   <p class="en">{{ v.translation }}</p>
                 }
@@ -68,7 +88,10 @@
               <app-state-view state="empty" message="The text of this surah isn't available yet." />
             }
           </ol>
-          <p class="source tb-muted">English: Sahih International</p>
+          <p class="source tb-muted">
+            Arabic: {{ settings.arabicType().replace('quran-', '') }}
+            @if (settings.showTranslation()) { · English: Sahih International }
+          </p>
         }
         @case ('error') {
           <app-state-view state="error" [message]="verses.error()" (retry)="load()" />

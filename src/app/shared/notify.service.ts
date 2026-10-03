@@ -6,7 +6,7 @@ export class NotifyService {
   private readonly toasts = inject(ToastController);
 
   async show(message: string): Promise<void> {
-    const toast = await this.toasts.create({ message, duration: 2400, position: 'bottom', cssClass: 'tb-toast' });
+    const toast = await this.toasts.create({ message, duration: 2400, position: 'top', cssClass: 'tb-toast' });
     await toast.present();
   }
 

@@ -13,6 +13,15 @@
 @import '@fontsource/scheherazade-new/arabic-700.css';
 @import '@fontsource/amiri-quran/arabic-400.css';
 
+/* Italiana's hyphen is nearly invisible and its digits read as letters ("1" like "I"):
+   borrow Marcellus's for names like "Ash-Sharh" and numbers in headings. */
+@font-face {
+  font-family: 'Italiana Hyphen';
+  src: url('../node_modules/@fontsource/marcellus/files/marcellus-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+002D, U+0030-0039, U+2010-2011;
+  font-display: swap;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -276,4 +285,139 @@ em.tb-hl,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---------- Forms ---------- */
+.tb-form {
+  display: grid;
+  gap: 14px;
+}
+
+.tb-form ion-input,
+.tb-form ion-textarea,
+.tb-form ion-select {
+  --background: var(--tb-field);
+  --border-color: var(--tb-line);
+  --border-radius: 14px;
+  --highlight-color-focused: var(--tb-gold);
+  --placeholder-color: var(--tb-muted);
+  --padding-start: 14px;
+  --padding-end: 14px;
+}
+
+.tb-field-error {
+  margin: -8px 4px 0;
+  font-size: 12.5px;
+  color: var(--ion-color-danger);
+}
+
+.tb-field-hint {
+  margin: -8px 4px 0;
+  font-size: 12.5px;
+  color: var(--tb-muted);
+}
+
+.tb-alert {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  border: 1px solid rgba(var(--ion-color-danger-rgb), 0.3);
+  color: var(--tb-fg);
+
+  ion-icon {
+    flex: none;
+    font-size: 18px;
+    margin-top: 1px;
+    color: var(--ion-color-danger);
+  }
+}
+
+.tb-alert--ok {
+  background: var(--tb-chip-bg);
+  border-color: var(--tb-chip-line);
+
+  ion-icon {
+    color: var(--tb-teal);
+  }
+}
+
+/* Centered card used by the sign-in pages. */
+.tb-auth {
+  max-width: 460px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 26px 22px;
+  display: grid;
+  gap: 18px;
+
+  h1 {
+    font-size: calc(32px * var(--tb-display-scale));
+  }
+
+  > p {
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.tb-auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+
+  a {
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
+
+.tb-codes {
+  margin: 0;
+  padding: 14px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 14px;
+  border-radius: 14px;
+  background: var(--tb-field);
+  border: 1px dashed var(--tb-glass-line);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Danger buttons in account pages. */
+ion-button.tb-danger {
+  --color: var(--ion-color-danger);
+  --border-color: rgba(var(--ion-color-danger-rgb), 0.5);
+}
+
+/* A simple page header used by signed-in pages. */
+.tb-page-intro {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+
+  h1 {
+    font-size: calc(32px * var(--tb-display-scale));
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+ion-fab-button {
+  --background: var(--tb-accent-gradient);
+  --background-activated: var(--tb-gold);
+  --color: #10141f;
+  --box-shadow: var(--tb-glow);
 }

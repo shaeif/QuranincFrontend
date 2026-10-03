@@ -1,0 +1,104 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
+    <ion-title>Create an account</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container">
+    <section class="tb-auth tb-glass tb-pattern">
+      @if (done()) {
+        <ion-icon name="mail-outline" class="big-icon" aria-hidden="true" />
+        <h1 class="tb-display">Check your email</h1>
+        <p>We sent a verification code to <b>{{ form().email }}</b>. Enter it to confirm your address, then log in.</p>
+        <ion-button expand="block" class="tb-glow" routerLink="/verify-email" [queryParams]="{ email: form().email }">Enter the code</ion-button>
+        <div class="tb-auth-links"><a routerLink="/login">Go to log in</a></div>
+      } @else {
+        <div>
+          <p class="tb-eyebrow">Join Tadabbur</p>
+          <h1 class="tb-display">Reflect with others</h1>
+        </div>
+        <form class="tb-form" (submit)="submit($event)" novalidate>
+          <ion-input label="Username" labelPlacement="floating" fill="outline" autocomplete="username" autocapitalize="off"
+            [maxlength]="80" [value]="form().username" (ionInput)="set('username', $event); usernameTaken.set(false)" (ionBlur)="checkUsername()" />
+          @if (errors().username) {
+            <p class="tb-field-error">{{ errors().username }}</p>
+          } @else if (usernameTaken()) {
+            <p class="tb-field-error">That username is taken.</p>
+          }
+
+          <ion-input label="Email" labelPlacement="floating" fill="outline" type="email" autocomplete="email" inputmode="email"
+            [value]="form().email" (ionInput)="set('email', $event); emailTaken.set(false)" (ionBlur)="checkEmail()" />
+          @if (errors().email) {
+            <p class="tb-field-error">{{ errors().email }}</p>
+          } @else if (emailTaken()) {
+            <p class="tb-field-error">An account already uses this email. <a routerLink="/forgot-password">Reset your password?</a></p>
+          }
+
+          <div class="two">
+            <div class="col">
+              <ion-input label="First name" labelPlacement="floating" fill="outline" autocomplete="given-name"
+                [value]="form().firstName" (ionInput)="set('firstName', $event)" />
+              @if (errors().firstName) {
+                <p class="tb-field-error">{{ errors().firstName }}</p>
+              }
+            </div>
+            <div class="col">
+              <ion-input label="Last name" labelPlacement="floating" fill="outline" autocomplete="family-name"
+                [value]="form().lastName" (ionInput)="set('lastName', $event)" />
+              @if (errors().lastName) {
+                <p class="tb-field-error">{{ errors().lastName }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="phone">
+            <ion-input label="Code" labelPlacement="floating" fill="outline" inputmode="tel" autocomplete="tel-country-code"
+              [maxlength]="5" [value]="form().countryCode" (ionInput)="set('countryCode', $event)" />
+            <ion-input label="Phone (optional)" labelPlacement="floating" fill="outline" type="tel" inputmode="tel" autocomplete="tel-national"
+              [value]="form().phone" (ionInput)="set('phone', $event)" />
+          </div>
+          @if (errors().phone || errors().countryCode) {
+            <p class="tb-field-error">{{ errors().phone || errors().countryCode }}</p>
+          }
+
+          <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
+            [maxlength]="128" [value]="form().password" (ionInput)="set('password', $event)">
+            <ion-input-password-toggle slot="end" />
+          </ion-input>
+          @if (errors().password) {
+            <p class="tb-field-error">{{ errors().password }}</p>
+          } @else if (passwordHint()) {
+            <p class="tb-field-hint">{{ passwordHint() }}</p>
+          } @else {
+            <p class="tb-field-hint">At least 10 characters. A short sentence works well.</p>
+          }
+
+          <ion-input label="Repeat password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
+            [maxlength]="128" [value]="form().confirm" (ionInput)="set('confirm', $event)" />
+          @if (errors().confirm) {
+            <p class="tb-field-error">{{ errors().confirm }}</p>
+          }
+
+          @if (general()) {
+            <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ general() }}</p>
+          }
+
+          <ion-button type="submit" expand="block" class="tb-glow" [disabled]="busy()">
+            @if (busy()) {
+              <ion-spinner name="dots" />
+            } @else {
+              Create account
+            }
+          </ion-button>
+        </form>
+        <div class="tb-auth-links">
+          <span class="tb-muted">Already have an account?</span>
+          <a routerLink="/login">Log in</a>
+        </div>
+      }
+    </section>
+  </div>
+</ion-content>

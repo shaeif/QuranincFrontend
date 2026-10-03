@@ -2,7 +2,7 @@
   <ion-toolbar>
     <ion-buttons slot="start"><ion-back-button defaultHref="/reflections" text="" /></ion-buttons>
     <ion-title>Reflection</ion-title>
-    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -11,20 +11,52 @@
     @switch (reflection.status()) {
       @case ('ready') {
         @let r = reflection.data()!;
-        <app-reflection-card [reflection]="r" [clamp]="false" />
+        <app-reflection-card [reflection]="r" [clamp]="false" [link]="false" />
 
-        <div class="actions">
-          <ion-button fill="outline" (click)="join('like reflections')">
-            <ion-icon slot="start" name="heart-outline" />Like · {{ r.likeCount }}
+        <!-- Reactions -->
+        <div class="bar" role="toolbar" aria-label="Reflection actions">
+          <ion-button [fill]="r.likedByMe ? 'solid' : 'outline'" size="small" (click)="toggleLike()" [attr.aria-pressed]="r.likedByMe">
+            <ion-icon slot="start" [name]="r.likedByMe ? 'heart' : 'heart-outline'" />{{ r.likeCount }}
           </ion-button>
-          <ion-button fill="outline" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
-            <ion-icon slot="start" name="book-outline" />Read {{ surah()?.name }} {{ r.surah }}:{{ r.ayah }}
+          <ion-button fill="outline" size="small" (click)="toggleBookmark()" [attr.aria-pressed]="r.bookmarkedByMe"
+            [attr.aria-label]="r.bookmarkedByMe ? 'Remove bookmark' : 'Bookmark'">
+            <ion-icon slot="icon-only" [name]="r.bookmarkedByMe ? 'bookmark' : 'bookmark-outline'" />
           </ion-button>
-          @if (r.edited) {
-            <span class="edited tb-muted">Edited</span>
+          @if (!isAuthor()) {
+            <ion-button fill="outline" size="small" (click)="toggleFollow()" [attr.aria-pressed]="r.followedByMe">
+              <ion-icon slot="start" [name]="r.followedByMe ? 'notifications' : 'notifications-outline'" />
+              {{ r.followedByMe ? 'Following' : 'Follow' }}
+            </ion-button>
+          }
+          <ion-button fill="outline" size="small" (click)="share()" aria-label="Share">
+            <ion-icon slot="icon-only" name="share-social-outline" />
+          </ion-button>
+          <ion-button fill="clear" size="small" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
+            <ion-icon slot="start" name="book-outline" />{{ surah()?.name }} {{ r.surah }}:{{ r.ayah }}
+          </ion-button>
+        </div>
+
+        <!-- Owner / moderator / report -->
+        <div class="bar small">
+          @if (isAuthor()) {
+            <ion-button fill="clear" size="small" [routerLink]="['/reflections', r.id, 'edit']"><ion-icon slot="start" name="create-outline" />Edit</ion-button>
+          }
+          @if (isAuthor() || canModerate()) {
+            <ion-button fill="clear" size="small" class="tb-danger" (click)="remove()" [disabled]="working()"><ion-icon slot="start" name="trash-outline" />Delete</ion-button>
+          }
+          @if (canModerate()) {
+            @if (r.status === 'hidden') {
+              <ion-button fill="clear" size="small" (click)="moderate('published')" [disabled]="working()"><ion-icon slot="start" name="eye-outline" />Restore</ion-button>
+            } @else {
+              <ion-button fill="clear" size="small" (click)="moderate('hidden')" [disabled]="working()"><ion-icon slot="start" name="eye-off-outline" />Hide</ion-button>
+            }
+          }
+          @if (!isAuthor()) {
+            <ion-button fill="clear" size="small" (click)="report()"><ion-icon slot="start" name="flag-outline" />Report</ion-button>
           }
         </div>
 
+        <!-- Comments -->
         <section class="tb-section" aria-labelledby="comments-title">
           <div class="tb-section-head">
             <h2 id="comments-title">Comments ({{ comments.data()?.total ?? r.commentCount }})</h2>
@@ -34,14 +66,26 @@
               <ul class="comments">
                 @for (c of comments.data()!.items; track c.id) {
                   <li class="comment tb-tile">
-                    <header>
-                      <b>{{ '@' + c.authorName }}</b>
-                      <time class="tb-muted">{{ timeAgo(c.createdAt) }}</time>
-                    </header>
-                    <p>{{ c.text }}</p>
+                    <app-avatar [name]="c.authorName" [size]="30" />
+                    <div class="c-body">
+                      <header>
+                        @if (c.authorId) {
+                          <a [routerLink]="['/users', c.authorId]">{{ '@' + c.authorName }}</a>
+                        } @else {
+                          <b>{{ '@' + c.authorName }}</b>
+                        }
+                        <time class="tb-muted">{{ timeAgo(c.createdAt) }}</time>
+                        @if (canDeleteComment(c)) {
+                          <ion-button fill="clear" size="small" class="del" (click)="deleteComment(c)" aria-label="Delete comment">
+                            <ion-icon slot="icon-only" name="trash-outline" />
+                          </ion-button>
+                        }
+                      </header>
+                      <p>{{ c.text }}</p>
+                    </div>
                   </li>
                 } @empty {
-                  <app-state-view state="empty" message="No comments yet." />
+                  <app-state-view state="empty" message="No comments yet. Start the conversation." />
                 }
               </ul>
             }
@@ -52,17 +96,27 @@
               <app-state-view state="loading" [rows]="2" />
             }
           }
-          <button type="button" class="comment-cta tb-tile" (click)="join('comment')">
-            <ion-icon name="chatbubble-outline" aria-hidden="true" /> Add a comment
-          </button>
+
+          @if (auth.isLoggedIn()) {
+            <form class="compose tb-tile" (submit)="addComment($event)" novalidate>
+              <ion-textarea [autoGrow]="true" [rows]="2" [maxlength]="2000" placeholder="Add a kind, thoughtful comment"
+                aria-label="Your comment" [value]="commentText()" (ionInput)="commentText.set(inputValue($event))" />
+              @if (commentError()) {
+                <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ commentError() }}</p>
+              }
+              <ion-button type="submit" size="small" [disabled]="commentBusy() || !commentText().trim()">
+                @if (commentBusy()) { <ion-spinner name="dots" /> } @else { <ion-icon slot="start" name="send" />Comment }
+              </ion-button>
+            </form>
+          } @else {
+            <a class="compose-cta tb-tile" routerLink="/login" [queryParams]="{ next: '/reflections/' + r.id }">
+              <ion-icon name="chatbubble-outline" aria-hidden="true" /> Log in to comment
+            </a>
+          }
         </section>
       }
       @case ('error') {
-        <app-state-view
-          state="error"
-          [message]="reflection.error() === 'Reflection not found' ? 'This reflection was removed or is hidden.' : reflection.error()"
-          (retry)="load()"
-        />
+        <app-state-view state="error" [message]="reflection.error()" (retry)="load()" />
       }
       @default {
         <app-state-view state="loading" [rows]="1" />

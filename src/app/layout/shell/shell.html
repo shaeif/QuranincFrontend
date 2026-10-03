@@ -22,7 +22,46 @@
           </li>
         </ul>
 
+        @if (auth.isLoggedIn()) {
+          <div class="rail-group">
+            <p class="tb-eyebrow">Your space</p>
+            <ul class="rail-nav">
+              <li>
+                <a routerLink="/notifications" routerLinkActive="active" routerDirection="root" class="rail-link">
+                  <ion-icon name="notifications-outline" aria-hidden="true" />
+                  <span>Notifications</span>
+                  @if (badge.unread()) {
+                    <span class="rail-count">{{ badge.unread() }}</span>
+                  }
+                </a>
+              </li>
+              @for (item of mine; track item.tab) {
+                <li>
+                  <a [routerLink]="'/' + item.tab" routerLinkActive="active" routerDirection="root" class="rail-link">
+                    <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
+                    <span>{{ item.label }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+            <a routerLink="/reflections/new" class="rail-write">
+              <ion-icon name="create-outline" aria-hidden="true" /> Write a reflection
+            </a>
+          </div>
+        }
+
         <div class="rail-foot">
+          @if (auth.user(); as user) {
+            <a routerLink="/you" class="rail-me">
+              <app-avatar [name]="user.username" [src]="user.pictureUrl" [size]="34" />
+              <span><b>{{ user.displayName }}</b><small>{{ '@' + user.username }}</small></span>
+            </a>
+          } @else if (!auth.isLoggedIn()) {
+            <div class="rail-auth">
+              <a routerLink="/login" class="rail-write">Log in</a>
+              <a routerLink="/signup" class="rail-signup">Create an account</a>
+            </div>
+          }
           <p class="tb-eyebrow">Theme</p>
           <div class="theme-switch" role="radiogroup" aria-label="Theme">
             @for (t of themes; track t.value) {
@@ -49,7 +88,7 @@
   <div class="ion-page" id="tb-main">
     <ion-tabs>
       <ion-tab-bar slot="bottom" class="tabbar">
-        @for (item of nav; track item.tab) {
+        @for (item of tabs; track item.tab) {
           <ion-tab-button [tab]="item.tab">
             <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
             <ion-label>{{ item.label }}</ion-label>

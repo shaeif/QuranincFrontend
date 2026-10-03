@@ -147,3 +147,85 @@ ion-split-pane {
     text-shadow: var(--tb-text-glow);
   }
 }
+
+.rail-group {
+  display: grid;
+  gap: 8px;
+
+  .tb-eyebrow {
+    padding-inline: 14px;
+  }
+}
+
+.rail-count {
+  margin-inline-start: auto;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 11px;
+  background: var(--tb-teal);
+  color: var(--tb-bg);
+  font-size: 12px;
+  text-align: center;
+}
+
+.rail-write {
+  margin: 6px 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: var(--tb-radius-field);
+  background: var(--tb-accent-gradient);
+  color: #10141f;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: var(--tb-glow);
+}
+
+.rail-auth {
+  display: grid;
+  gap: 6px;
+}
+
+.rail-signup {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px;
+}
+
+.rail-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  color: var(--tb-fg);
+  text-decoration: none;
+  background: var(--tb-field);
+  border: 1px solid var(--tb-line);
+
+  span {
+    min-width: 0;
+    display: grid;
+  }
+
+  b,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  b {
+    font-size: 14px;
+  }
+
+  small {
+    font-size: 12px;
+    color: var(--tb-muted);
+  }
+}

@@ -45,6 +45,10 @@
               "node_modules/@ionic/angular/css/palettes/dark.class.css",
               "src/theme/variables.scss",
               "src/global.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "qrcode",
+              "dijkstrajs"
             ]
           },
           "configurations": {
@@ -52,8 +56,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "1.5MB"
+                  "maximumWarning": "1.75MB",
+                  "maximumError": "2MB"
                 },
                 {
                   "type": "anyComponentStyle",

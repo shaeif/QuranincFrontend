@@ -1,9 +1,25 @@
-.themes {
+.themes,
+.scripts {
   display: grid;
   gap: 10px;
 }
 
-.theme {
+.scripts {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.note {
+  margin: -6px 0 0;
+  font-size: 13.5px;
+}
+
+.script {
+  grid-template-columns: 1fr auto !important;
+  padding: 12px 14px !important;
+}
+
+.theme,
+.script {
   font: inherit;
   color: var(--tb-fg);
   text-align: left;

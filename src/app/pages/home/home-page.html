@@ -2,10 +2,7 @@
   <ion-toolbar>
     <a slot="start" class="brand" routerLink="/home" aria-label="Tadabbur home"><app-brand-mark [compact]="true" /></a>
     <ion-buttons slot="end">
-      <app-theme-toggle />
-      <ion-button routerLink="/settings" aria-label="Settings" title="Settings">
-        <ion-icon slot="icon-only" name="settings-outline" />
-      </ion-button>
+      <app-header-actions />
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -18,7 +15,7 @@
   <div class="tb-container">
     <!-- Hero -->
     <section class="hero tb-pattern">
-      <p class="tb-eyebrow">{{ greeting }} · Assalamu alaikum</p>
+      <p class="tb-eyebrow">{{ greeting }} · Assalamu alaikum{{ firstName() ? ', ' + firstName() : '' }}</p>
       <h1 class="tb-display">Reflect on every verse</h1>
       <p class="lede">
         Read the Quran in Arabic with English, search its meanings, and see what people around the world reflect on.
@@ -161,13 +158,29 @@
       }
     </section>
 
-    <!-- Join -->
-    <section class="join tb-pattern tb-tile">
-      <div>
-        <h2 class="tb-display">Keep your reflections in one place</h2>
-        <p class="tb-muted">With an account you can post reflections, like and comment, bookmark verses and keep a reading streak.</p>
-      </div>
-      <ion-button class="tb-glow" (click)="join()">Create an account</ion-button>
-    </section>
+    <!-- Join, or write -->
+    @if (auth.isLoggedIn()) {
+      <section class="join tb-pattern tb-tile">
+        <div>
+          <h2 class="tb-display">What did a verse teach you today?</h2>
+          <p class="tb-muted">Share a reflection. Others can learn from it, and you can follow the verses and people that move you.</p>
+        </div>
+        <div class="join-actions">
+          <ion-button class="tb-glow" routerLink="/reflections/new"><ion-icon slot="start" name="create-outline" />Write a reflection</ion-button>
+          <ion-button fill="outline" routerLink="/feed">Your feed</ion-button>
+        </div>
+      </section>
+    } @else {
+      <section class="join tb-pattern tb-tile">
+        <div>
+          <h2 class="tb-display">Keep your reflections in one place</h2>
+          <p class="tb-muted">With an account you can post reflections, like and comment, bookmark verses and keep a reading streak.</p>
+        </div>
+        <div class="join-actions">
+          <ion-button class="tb-glow" routerLink="/signup">Create an account</ion-button>
+          <ion-button fill="clear" routerLink="/login">Log in</ion-button>
+        </div>
+      </section>
+    }
   </div>
 </ion-content>

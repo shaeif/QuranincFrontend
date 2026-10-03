@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border tb-header">
   <ion-toolbar>
     <ion-title>Reflections</ion-title>
-    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -72,4 +72,10 @@
   <ion-infinite-scroll (ionInfinite)="loadMore($event)" [disabled]="status() !== 'ready' || !hasMore()">
     <ion-infinite-scroll-content loadingText="Loading more reflections" />
   </ion-infinite-scroll>
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button routerLink="/reflections/new" [queryParams]="writeParams()" aria-label="Write a reflection" title="Write a reflection">
+      <ion-icon name="create-outline" />
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

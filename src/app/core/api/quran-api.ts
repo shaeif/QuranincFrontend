@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { TRANSLITERATION_TYPE } from '../quran/quran-texts';
 import { ApiClient } from './api-client';
 import { LikedVerse, Page, Reflection, SearchVerse, Verse } from './models';
 import { field, toAyahTexts, toLikedVerse, toPage, toReflection, toSearchVerse, toVerse } from './normalize';
@@ -35,17 +36,43 @@ export class QuranApi {
     );
   }
 
-  /** Arabic and English for a whole surah, merged by ayah number. */
-  surahVerses(surah: number): Observable<Verse[]> {
-    const arabic$ = this.surahText(surah, environment.quranTextType);
-    // The reader still works in Arabic only if the translation can't load.
-    const english$ = this.surahText(surah, environment.translationType).pipe(catchError(() => of(new Map<number, string>())));
-    return forkJoin([arabic$, english$]).pipe(
-      map(([arabic, english]) =>
+  /**
+   * A whole surah: the chosen Arabic script, plus the translation and/or
+   * transliteration when asked for. The Arabic is required; the extras are
+   * left empty if they fail, so the reader still works.
+   */
+  surahVerses(surah: number, opts: { arabic?: string; translation?: boolean; transliteration?: boolean } = {}): Observable<Verse[]> {
+    const empty = of(new Map<number, string>());
+    const optional = (type: string, wanted: boolean | undefined) =>
+      wanted ? this.surahText(surah, type).pipe(catchError(() => empty)) : empty;
+    return forkJoin([
+      this.surahText(surah, opts.arabic ?? environment.quranTextType),
+      optional(environment.translationType, opts.translation ?? true),
+      optional(TRANSLITERATION_TYPE, opts.transliteration),
+    ]).pipe(
+      map(([arabic, english, latin]) =>
         [...arabic.entries()]
           .sort(([a], [b]) => a - b)
-          .map(([ayah, textAr]) => ({ surah, ayah, textAr, translation: english.get(ayah) ?? '' })),
+          .map(([ayah, textAr]) => ({
+            surah,
+            ayah,
+            textAr,
+            translation: english.get(ayah) ?? '',
+            transliteration: latin.get(ayah)?.replace(/<[^>]*>/g, ''),
+          })),
       ),
+    );
+  }
+
+  /** One ayah in one text type: GET /quran/<type>/<surah>/<ayah>. */
+  ayahText(surah: number, ayah: number, type: string): Observable<string> {
+    return this.api.get(`/quran/${encodeURIComponent(type)}/${surah}/${ayah}`).pipe(
+      map((raw) => {
+        const texts = toAyahTexts(raw);
+        if (texts.size) return texts.get(ayah) ?? [...texts.values()][0];
+        const single = toVerse(raw);
+        return single.textAr || String(field(raw, 'text') ?? '');
+      }),
     );
   }
 

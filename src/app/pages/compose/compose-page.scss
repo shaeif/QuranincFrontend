@@ -1,0 +1,51 @@
+.verse {
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 10px;
+
+  ion-select {
+    --background: var(--tb-field);
+    --border-radius: 14px;
+  }
+}
+
+.locked {
+  margin: 0;
+  font-weight: 700;
+  color: var(--tb-gold);
+}
+
+.ar {
+  margin: 0;
+  font-size: 26px;
+  line-height: 2;
+}
+
+.en {
+  margin: 0;
+  color: var(--tb-muted);
+  line-height: 1.6;
+}
+
+.counter {
+  text-align: right;
+
+  &.low {
+    color: var(--tb-gold);
+  }
+}
+
+.tags {
+  display: grid;
+  gap: 10px;
+}
+
+.center {
+  text-align: center;
+}

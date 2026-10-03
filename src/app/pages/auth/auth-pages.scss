@@ -1,0 +1,22 @@
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.col {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.phone {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+}
+
+.big-icon {
+  font-size: 40px;
+  color: var(--tb-gold);
+}

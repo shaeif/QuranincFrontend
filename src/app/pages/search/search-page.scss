@@ -69,3 +69,21 @@
   font-weight: 600;
   color: var(--tb-teal);
 }
+
+.people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  color: var(--tb-fg);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}

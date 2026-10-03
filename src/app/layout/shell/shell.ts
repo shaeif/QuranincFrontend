@@ -11,7 +11,10 @@ import {
   IonTabButton,
   IonTabs,
 } from '@ionic/angular';
+import { AuthService } from '../../core/auth/auth.service';
+import { NotificationBadgeService } from '../../core/auth/notification-badge.service';
 import { ThemePreference, ThemeService } from '../../core/theme/theme.service';
+import { Avatar } from '../../shared/avatar';
 import { BrandMark } from '../../shared/brand-mark';
 
 interface NavItem {
@@ -38,6 +41,7 @@ interface NavItem {
     IonTabBar,
     IonTabButton,
     IonTabs,
+    Avatar,
     BrandMark,
   ],
   templateUrl: './shell.html',
@@ -45,12 +49,22 @@ interface NavItem {
 })
 export class Shell {
   protected readonly theme = inject(ThemeService);
+  protected readonly auth = inject(AuthService);
+  protected readonly badge = inject(NotificationBadgeService);
 
   protected readonly nav: NavItem[] = [
     { tab: 'home', label: 'Home', icon: 'home' },
     { tab: 'quran', label: 'Quran', icon: 'book' },
     { tab: 'reflections', label: 'Reflections', icon: 'chatbubbles' },
     { tab: 'search', label: 'Search', icon: 'search' },
+  ];
+
+  protected readonly tabs: NavItem[] = [...this.nav, { tab: 'you', label: 'You', icon: 'person' }];
+
+  protected readonly mine: NavItem[] = [
+    { tab: 'feed', label: 'Your feed', icon: 'newspaper' },
+    { tab: 'bookmarks', label: 'Bookmarks', icon: 'bookmark' },
+    { tab: 'reading', label: 'Reading', icon: 'flame' },
   ];
 
   protected readonly themes: { value: ThemePreference; label: string; icon: string }[] = [

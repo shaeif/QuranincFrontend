@@ -1,0 +1,94 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
+    <ion-title>Log in</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container">
+    <section class="tb-auth tb-glass tb-pattern">
+      <app-brand-mark />
+
+      @if (auth.endedMessage()) {
+        <p class="tb-alert tb-alert--ok" role="status"><ion-icon name="information-circle-outline" />{{ auth.endedMessage() }}</p>
+      }
+
+      @if (step() === 'password') {
+        <h1 class="tb-display">Welcome back</h1>
+        <form class="tb-form" (submit)="submitPassword($event)" novalidate>
+          <ion-input
+            label="Username"
+            labelPlacement="floating"
+            fill="outline"
+            autocomplete="username"
+            autocapitalize="off"
+            [maxlength]="80"
+            [value]="username()"
+            (ionInput)="username.set(inputValue($event))"
+          />
+          <ion-input
+            label="Password"
+            labelPlacement="floating"
+            fill="outline"
+            type="password"
+            autocomplete="current-password"
+            [maxlength]="128"
+            [value]="password()"
+            (ionInput)="password.set(inputValue($event))"
+            (keyup.enter)="submitPassword()"
+          >
+            <ion-input-password-toggle slot="end" />
+          </ion-input>
+
+          @if (error()) {
+            <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ error() }}</p>
+          }
+
+          <ion-button type="submit" expand="block" class="tb-glow" [disabled]="busy()">
+            @if (busy()) {
+              <ion-spinner name="dots" />
+            } @else {
+              Log in
+            }
+          </ion-button>
+        </form>
+        <div class="tb-auth-links">
+          <a routerLink="/forgot-password">Forgot your password?</a>
+          <a routerLink="/signup">Create an account</a>
+        </div>
+      } @else {
+        <h1 class="tb-display">Two-step check</h1>
+        <p class="tb-muted">Enter the 6-digit code from your authenticator app. Lost your phone? Use one of your recovery codes.</p>
+        <form class="tb-form" (submit)="submitCode($event)" novalidate>
+          <ion-input
+            label="Code"
+            labelPlacement="floating"
+            fill="outline"
+            autocomplete="one-time-code"
+            inputmode="text"
+            autocapitalize="off"
+            [maxlength]="32"
+            [value]="code()"
+            (ionInput)="code.set(inputValue($event))"
+            (keyup.enter)="submitCode()"
+          />
+          @if (error()) {
+            <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ error() }}</p>
+          }
+          <ion-button type="submit" expand="block" class="tb-glow" [disabled]="busy()">
+            @if (busy()) {
+              <ion-spinner name="dots" />
+            } @else {
+              Verify and log in
+            }
+          </ion-button>
+        </form>
+        <div class="tb-auth-links">
+          <a href="#" (click)="$event.preventDefault(); backToPassword()">Use a different account</a>
+        </div>
+      }
+    </section>
+  </div>
+</ion-content>

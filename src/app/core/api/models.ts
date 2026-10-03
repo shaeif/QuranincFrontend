@@ -35,6 +35,7 @@ export interface Reflection {
   status?: string;
   likedByMe: boolean;
   bookmarkedByMe: boolean;
+  followedByMe: boolean;
 }
 
 export interface ReflectionComment {
@@ -58,3 +59,95 @@ export interface Page<T> {
 }
 
 export type ReflectionSort = 'activity' | 'newest' | 'oldest' | 'likes' | 'comments';
+
+export type Role = 'user' | 'moderator' | 'admin';
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName: string;
+  role: Role;
+  emailVerified?: boolean;
+  pictureUrl?: string;
+  twoFactorEnabled?: boolean;
+  createdAt?: number;
+  /** The profile exactly as the API sent it (used to know which fields can be edited). */
+  raw: Record<string, unknown>;
+}
+
+export interface UserSummary {
+  id: string;
+  username: string;
+  pictureUrl?: string;
+}
+
+export interface AuthorPage {
+  author: UserSummary & { followedByMe: boolean; deleted?: boolean };
+  stats: { reflections: number; likesReceived: number; followers: number; following: number | null };
+  reflections: Page<Reflection>;
+}
+
+export interface AppNotification {
+  id: string;
+  kind: string;
+  actor?: UserSummary;
+  actorCount: number;
+  reflectionId?: string;
+  reflectionSurah?: number;
+  reflectionAyah?: number;
+  commentText?: string;
+  read: boolean;
+  createdAt?: number;
+}
+
+export interface ReadingStreak {
+  current: number;
+  longest: number;
+  lastReadDate?: string;
+  readToday: boolean;
+  timeZone?: string;
+}
+
+export interface ReadingStatus {
+  position?: { surah: number; ayah: number; quranType?: string; textAr?: string; translation?: string };
+  streak: ReadingStreak;
+}
+
+export interface ReadingHistoryEntry {
+  surah: number;
+  ayah: number;
+  at?: number;
+}
+
+export interface ReportGroup {
+  reflection: Reflection;
+  reports: number;
+  reasons: string[];
+  notes: string[];
+}
+
+export type FollowKind = 'user' | 'ayah' | 'reflection';
+
+export interface FollowEntry {
+  kind: FollowKind;
+  target: string;
+  label: string;
+  at?: number;
+}
+
+export interface FeedItem {
+  reflection: Reflection;
+  because: string[];
+}
+
+export interface Session {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface TwoFactorChallenge {
+  challenge: string;
+}

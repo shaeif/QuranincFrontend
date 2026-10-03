@@ -15,7 +15,7 @@ import { Revelation, SURAHS } from '../../core/quran/surahs';
 import { LastReadService } from '../../core/settings/last-read.service';
 import { StarNumber } from '../../shared/star-number';
 import { StateView } from '../../shared/state-view';
-import { ThemeToggle } from '../../shared/theme-toggle';
+import { HeaderActions } from '../../shared/header-actions';
 
 type Filter = 'all' | Revelation;
 
@@ -39,7 +39,7 @@ function simplify(text: string): string {
     IonToolbar,
     StarNumber,
     StateView,
-    ThemeToggle,
+    HeaderActions,
   ],
   templateUrl: './quran-page.html',
   styleUrl: './quran-page.scss',

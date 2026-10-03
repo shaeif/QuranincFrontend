@@ -1,0 +1,197 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/you" text="" /></ion-buttons>
+    <ion-title>Account</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    @if (auth.user(); as user) {
+      <!-- Profile -->
+      <section class="tb-section" aria-labelledby="profile-title">
+        <div class="tb-section-head"><h2 id="profile-title">Profile</h2></div>
+        <div class="panel tb-tile">
+          <div class="picture">
+            <app-avatar [name]="user.username" [src]="user.pictureUrl" [size]="76" />
+            <div class="picture-actions">
+              <label class="file-btn" [class.disabled]="pictureBusy()">
+                <ion-icon name="camera-outline" aria-hidden="true" />
+                {{ user.pictureUrl ? 'Change picture' : 'Add a picture' }}
+                <input type="file" accept="image/jpeg,image/png,image/webp" (change)="pickPicture($event)" [disabled]="pictureBusy()" />
+              </label>
+              @if (user.pictureUrl) {
+                <ion-button fill="clear" size="small" (click)="removePicture()" [disabled]="pictureBusy()">Remove</ion-button>
+              }
+              @if (pictureBusy()) {
+                <ion-spinner name="dots" />
+              }
+              <small class="tb-muted">JPEG, PNG or WebP, up to 5 MB. Location data is removed.</small>
+            </div>
+          </div>
+
+          <dl class="facts">
+            <div><dt>Username</dt><dd>{{ '@' + user.username }}</dd></div>
+            @if (user.email) {
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  {{ user.email }}
+                  @if (user.emailVerified === false) {
+                    · <a routerLink="/verify-email">verify</a>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+
+          @if (fields().length) {
+            <form class="tb-form" (submit)="saveProfile($event)" novalidate>
+              @for (f of fields(); track f) {
+                <ion-input [label]="labels[f] || f" labelPlacement="floating" fill="outline" [value]="draft()[f]" (ionInput)="setDraft(f, $event)" />
+              }
+              @if (profileError()) {
+                <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ profileError() }}</p>
+              }
+              @if (profileMessage()) {
+                <p class="tb-alert tb-alert--ok" role="status"><ion-icon name="checkmark-circle" />{{ profileMessage() }}</p>
+              }
+              <ion-button type="submit" [disabled]="profileBusy()">Save profile</ion-button>
+            </form>
+          }
+        </div>
+      </section>
+
+      <!-- Password -->
+      <section class="tb-section" aria-labelledby="password-title">
+        <div class="tb-section-head"><h2 id="password-title">Password</h2></div>
+        <form class="panel tb-tile tb-form" (submit)="changePassword($event)" novalidate>
+          <ion-input label="Current password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
+            [value]="oldPassword()" (ionInput)="oldPassword.set(inputValue($event))">
+            <ion-input-password-toggle slot="end" />
+          </ion-input>
+          <ion-input label="New password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
+            [maxlength]="128" [value]="newPassword()" (ionInput)="newPassword.set(inputValue($event))">
+            <ion-input-password-toggle slot="end" />
+          </ion-input>
+          <ion-input label="Repeat new password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
+            [maxlength]="128" [value]="confirmPassword()" (ionInput)="confirmPassword.set(inputValue($event))" />
+          @if (passwordError()) {
+            <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ passwordError() }}</p>
+          }
+          <p class="tb-field-hint">Changing it signs out your other devices. This one stays signed in.</p>
+          <ion-button type="submit" [disabled]="passwordBusy()">Change password</ion-button>
+        </form>
+      </section>
+
+      <!-- Two-step -->
+      <section class="tb-section" aria-labelledby="tf-title">
+        <div class="tb-section-head"><h2 id="tf-title">Two-step login</h2></div>
+        <div class="panel tb-tile tb-form">
+          @if (recoveryCodes().length) {
+            <p class="tb-alert tb-alert--ok"><ion-icon name="shield-checkmark-outline" />Two-step login is on. Save these recovery codes somewhere safe. Each one works once if you lose your phone. They won't be shown again.</p>
+            <ul class="tb-codes">
+              @for (c of recoveryCodes(); track c) {
+                <li>{{ c }}</li>
+              }
+            </ul>
+            <div class="row">
+              <ion-button fill="outline" (click)="copyCodes()"><ion-icon slot="start" name="copy-outline" />Copy codes</ion-button>
+              <ion-button fill="clear" (click)="recoveryCodes.set([])">I've saved them</ion-button>
+            </div>
+          } @else if (enrollment(); as e) {
+            <p>1. Scan this with an authenticator app (Google Authenticator, Authy, 1Password…), or enter the key by hand.</p>
+            <div class="enroll">
+              @if (qr()) {
+                <img class="qr" [src]="qr()" alt="QR code for your authenticator app" width="180" height="180" />
+              }
+              <div class="secret">
+                <small class="tb-muted">Key</small>
+                <code>{{ e.secret }}</code>
+                <ion-button size="small" fill="outline" (click)="copySecret()"><ion-icon slot="start" name="copy-outline" />Copy key</ion-button>
+                <a [href]="e.otpauthUri" class="open-app">Open in authenticator app</a>
+              </div>
+            </div>
+            <form class="tb-form" (submit)="confirmEnroll($event)" novalidate>
+              <p>2. Enter the 6-digit code it shows.</p>
+              <ion-input label="Code" labelPlacement="floating" fill="outline" inputmode="numeric" autocomplete="one-time-code"
+                [maxlength]="10" [value]="tfCode()" (ionInput)="tfCode.set(inputValue($event))" />
+              @if (tfError()) {
+                <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ tfError() }}</p>
+              }
+              <div class="row">
+                <ion-button type="submit" [disabled]="tfBusy()">Turn on</ion-button>
+                <ion-button fill="clear" (click)="enrollment.set(null)">Cancel</ion-button>
+              </div>
+            </form>
+          } @else if (user.twoFactorEnabled === true || showDisable()) {
+            <p><ion-icon name="shield-checkmark-outline" class="ok" aria-hidden="true" /> Logging in asks for a code from your authenticator app.</p>
+            <form class="tb-form" (submit)="disableTwoFactor($event)" novalidate>
+              <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
+                [value]="tfPassword()" (ionInput)="tfPassword.set(inputValue($event))" />
+              <ion-input label="Current code" labelPlacement="floating" fill="outline" inputmode="numeric" autocomplete="one-time-code"
+                [maxlength]="32" [value]="tfCode()" (ionInput)="tfCode.set(inputValue($event))" />
+              @if (tfError()) {
+                <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ tfError() }}</p>
+              }
+              <div class="row">
+                <ion-button type="submit" fill="outline" class="tb-danger" [disabled]="tfBusy()">Turn off two-step login</ion-button>
+                @if (user.twoFactorEnabled !== true) {
+                  <ion-button fill="clear" (click)="showDisable.set(false)">Cancel</ion-button>
+                }
+              </div>
+            </form>
+          } @else {
+            <p>Add a code from your phone to every login, so a stolen password isn't enough.</p>
+            <form class="tb-form" (submit)="startEnroll($event)" novalidate>
+              <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
+                [value]="tfPassword()" (ionInput)="tfPassword.set(inputValue($event))" />
+              @if (tfError()) {
+                <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ tfError() }}</p>
+              }
+              <div class="row">
+                <ion-button type="submit" [disabled]="tfBusy()">Set up two-step login</ion-button>
+                @if (user.twoFactorEnabled === undefined) {
+                  <ion-button fill="clear" (click)="showDisable.set(true)">It's already on</ion-button>
+                }
+              </div>
+            </form>
+          }
+        </div>
+      </section>
+
+      <!-- Sessions -->
+      <section class="tb-section" aria-labelledby="sessions-title">
+        <div class="tb-section-head"><h2 id="sessions-title">Devices</h2></div>
+        <div class="panel tb-tile">
+          <p class="tb-muted">Lost a phone or used a shared computer? End every session at once.</p>
+          <ion-button fill="outline" (click)="logoutEverywhere()"><ion-icon slot="start" name="log-out-outline" />Log out everywhere</ion-button>
+        </div>
+      </section>
+
+      <!-- Data -->
+      <section class="tb-section" aria-labelledby="data-title">
+        <div class="tb-section-head"><h2 id="data-title">Your data</h2></div>
+        <div class="panel tb-tile">
+          <p class="tb-muted">Download everything you've written and saved: reflections and their versions, comments, likes, bookmarks, follows, reading history and notifications.</p>
+          <ion-button fill="outline" (click)="exportData()" [disabled]="exportBusy()">
+            <ion-icon slot="start" name="download-outline" />Download my data
+          </ion-button>
+        </div>
+        <form class="panel tb-tile tb-form danger" (submit)="deleteForever($event)" novalidate>
+          <h3><ion-icon name="warning-outline" aria-hidden="true" /> Delete my account forever</h3>
+          <p class="tb-muted">Removes your account, reflections, comments, likes, bookmarks, follows and picture. This can't be undone. Download your data first if you want a copy.</p>
+          <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
+            [value]="deletePassword()" (ionInput)="deletePassword.set(inputValue($event))" />
+          <ion-input label="Type DELETE to confirm" labelPlacement="floating" fill="outline" autocapitalize="characters"
+            [value]="deleteConfirm()" (ionInput)="deleteConfirm.set(inputValue($event))" />
+          @if (deleteError()) {
+            <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ deleteError() }}</p>
+          }
+          <ion-button type="submit" fill="outline" class="tb-danger" [disabled]="deleteBusy()">Delete my account forever</ion-button>
+        </form>
+      </section>
+    }
+  </div>
+</ion-content>

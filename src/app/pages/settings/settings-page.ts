@@ -11,6 +11,7 @@ import {
 } from '@ionic/angular';
 import { environment } from '../../../environments/environment';
 import { BISMILLAH } from '../../core/quran/bismillah';
+import { ARABIC_SCRIPTS } from '../../core/quran/quran-texts';
 import { ARABIC_SIZE, ReadingSettingsService } from '../../core/settings/reading-settings.service';
 import { ThemePreference, ThemeService } from '../../core/theme/theme.service';
 
@@ -32,6 +33,7 @@ export class SettingsPage {
   protected readonly sizes = ARABIC_SIZE;
   protected readonly sample = BISMILLAH;
   protected readonly apiUrl = environment.apiUrl;
+  protected readonly scripts = ARABIC_SCRIPTS;
 
   protected readonly themes: ThemeOption[] = [
     { value: 'pearl', name: 'Pearl & Gold', description: 'Bright pearl, gold geometry and teal. Easy to read in daylight.' },

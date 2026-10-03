@@ -4,12 +4,15 @@ import {
   InfiniteScrollCustomEvent,
   IonButtons,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonRefresher,
   IonRefresherContent,
+  IonRouterLink,
   IonRouterLinkWithHref,
   IonSegment,
   IonSegmentButton,
@@ -25,7 +28,7 @@ import { getSurah } from '../../core/quran/surahs';
 import { LoadStatus, Loadable } from '../../core/util/loadable';
 import { ReflectionCard } from '../../shared/reflection-card';
 import { StateView } from '../../shared/state-view';
-import { ThemeToggle } from '../../shared/theme-toggle';
+import { HeaderActions } from '../../shared/header-actions';
 
 const PAGE_SIZE = 20;
 
@@ -41,12 +44,15 @@ interface Filter {
     RouterLink,
     IonButtons,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonRefresher,
     IonRefresherContent,
+    IonRouterLink,
     IonRouterLinkWithHref,
     IonSegment,
     IonSegmentButton,
@@ -54,7 +60,7 @@ interface Filter {
     IonToolbar,
     ReflectionCard,
     StateView,
-    ThemeToggle,
+    HeaderActions,
   ],
   templateUrl: './reflections-page.html',
   styleUrl: './reflections-page.scss',
@@ -91,6 +97,11 @@ export class ReflectionsPage implements OnInit {
     if (s && f.ayah) return `On ${s.name} ${s.number}:${f.ayah}`;
     if (s) return `On ${s.name}`;
     return 'Community reflections';
+  });
+
+  protected readonly writeParams = computed(() => {
+    const f = this.filter();
+    return f.surah ? { surah: f.surah, ayah: f.ayah ?? 1 } : {};
   });
 
   protected readonly hasFilter = computed(() => Object.keys(this.filter()).length > 0);

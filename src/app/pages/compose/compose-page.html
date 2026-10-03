@@ -1,0 +1,108 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/reflections" text="" /></ion-buttons>
+    <ion-title>{{ editing() ? 'Edit reflection' : 'Write a reflection' }}</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    @if (!auth.isLoggedIn()) {
+      <app-auth-prompt title="Share what a verse means to you" message="Log in to post reflections. Others can like them, comment and follow you." next="/reflections/new" />
+    } @else if (loadState() === 'loading') {
+      <app-state-view state="loading" [rows]="2" />
+    } @else if (loadState() === 'error') {
+      <app-state-view state="error" [message]="loadError()" (retry)="retryLoad()" />
+    } @else {
+      <form class="tb-form" (submit)="submit($event)" novalidate>
+        <!-- Verse -->
+        <section class="verse tb-glass tb-pattern">
+          <p class="tb-eyebrow">The verse</p>
+          @if (editing()) {
+            <p class="locked">{{ surahMeta()?.name }} {{ surah() }}:{{ ayah() }}</p>
+          } @else {
+            <div class="pick">
+              <ion-select label="Surah" labelPlacement="floating" fill="outline" interface="popover" [value]="surah()"
+                (ionChange)="setSurah($event.detail.value)">
+                @for (s of surahs; track s.number) {
+                  <ion-select-option [value]="s.number">{{ s.number }}. {{ s.name }}</ion-select-option>
+                }
+              </ion-select>
+              <ion-select label="Ayah" labelPlacement="floating" fill="outline" interface="popover" [value]="ayah()"
+                (ionChange)="setAyah($event.detail.value)">
+                @for (a of ayahOptions(); track a) {
+                  <ion-select-option [value]="a">{{ a }}</ion-select-option>
+                }
+              </ion-select>
+            </div>
+          }
+          @if (preview(); as p) {
+            @if (p.ar) {
+              <p class="ar tb-quran" lang="ar">{{ p.ar }}</p>
+            }
+            @if (p.en) {
+              <p class="en">{{ p.en }}</p>
+            }
+          } @else if (previewLoading()) {
+            <p class="tb-muted">Loading the verse…</p>
+          }
+        </section>
+
+        <!-- Highlight -->
+        <ion-input label="Words that struck you (optional)" labelPlacement="floating" fill="outline" [maxlength]="500"
+          [value]="highlight()" (ionInput)="highlight.set(inputValue($event))" />
+        @if (fieldErrors()['highlight_text']) {
+          <p class="tb-field-error">{{ fieldErrors()['highlight_text'] }}</p>
+        } @else {
+          <p class="tb-field-hint">A phrase from the verse, shown as a quote above your reflection.
+            @if (preview()?.ar && !highlight()) {
+              <a href="#" (click)="$event.preventDefault(); useHighlight()">Use the whole verse</a>
+            }
+          </p>
+        }
+
+        <!-- Text -->
+        <ion-textarea label="Your reflection" labelPlacement="floating" fill="outline" [autoGrow]="true" [rows]="6"
+          [maxlength]="maxText" [value]="text()" (ionInput)="text.set(inputValue($event))"
+          placeholder="What does this verse teach you? How does it meet your life today?" />
+        <p class="tb-field-hint counter" [class.low]="remaining() < 200">{{ remaining() }} characters left</p>
+        @if (fieldErrors()['reflection']) {
+          <p class="tb-field-error">{{ fieldErrors()['reflection'] }}</p>
+        }
+
+        <!-- Tags -->
+        <div class="tags">
+          <ion-input label="Topics" labelPlacement="floating" fill="outline" [value]="tagDraft()" [maxlength]="40"
+            (ionInput)="onTagInput($event)" (keydown.enter)="$event.preventDefault(); addTag()"
+            placeholder="patience, hope… then Enter" [disabled]="tags().length >= maxTags" />
+          @if (tags().length) {
+            <div class="tb-chip-row">
+              @for (t of tags(); track t) {
+                <button type="button" class="tb-chip" (click)="removeTag(t)" [attr.aria-label]="'Remove topic ' + t">
+                  {{ t }} <ion-icon name="close" aria-hidden="true" />
+                </button>
+              }
+            </div>
+          }
+          <p class="tb-field-hint">Up to {{ maxTags }} topics, so others can find your reflection.</p>
+        </div>
+
+        @if (error()) {
+          <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ error() }}</p>
+        }
+
+        <ion-button type="submit" expand="block" class="tb-glow" [disabled]="busy()">
+          @if (busy()) {
+            <ion-spinner name="dots" />
+          } @else {
+            {{ editing() ? 'Save changes' : 'Post reflection' }}
+          }
+        </ion-button>
+        @if (editing()) {
+          <p class="tb-field-hint center">Edits keep the earlier version in the verse's history.</p>
+        }
+      </form>
+    }
+  </div>
+</ion-content>

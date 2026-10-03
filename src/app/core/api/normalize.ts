@@ -1,4 +1,24 @@
-import { LikedVerse, Page, Reflection, ReflectionComment, SearchVerse, TagCount, Verse } from './models';
+import { API_BASE } from './api-client';
+import {
+  AppNotification,
+  AuthorPage,
+  FeedItem,
+  FollowEntry,
+  FollowKind,
+  LikedVerse,
+  Page,
+  ReadingHistoryEntry,
+  ReadingStatus,
+  Reflection,
+  ReflectionComment,
+  ReportGroup,
+  Role,
+  SearchVerse,
+  TagCount,
+  UserProfile,
+  UserSummary,
+  Verse,
+} from './models';
 
 /**
  * Maps raw API JSON to the app's models. Tolerant on purpose: it accepts
@@ -178,6 +198,7 @@ export function toReflection(raw: unknown): Reflection {
     status: str(r['status']),
     likedByMe: r['liked_by_me'] === true,
     bookmarkedByMe: r['bookmarked_by_me'] === true,
+    followedByMe: r['followed_by_me'] === true,
   };
 }
 
@@ -206,4 +227,162 @@ export function unwrapResult(raw: unknown): unknown {
 
 export function field(raw: unknown, key: string): unknown {
   return isObject(raw) ? raw[key] : undefined;
+}
+
+/* ---------------- Accounts ---------------- */
+
+/** "/user/<id>/picture?v=..." → absolute URL on the API host. */
+export function pictureUrl(value: unknown): string | undefined {
+  const path = str(value);
+  if (!path) return undefined;
+  return /^https?:\/\//.test(path) ? path : `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+function toRole(u: Json): Role {
+  const role = str(u['role'])?.toLowerCase();
+  if (role === 'admin' || u['is_admin'] === true) return 'admin';
+  if (role === 'moderator' || u['is_moderator'] === true) return 'moderator';
+  return 'user';
+}
+
+export function toUserSummary(raw: unknown): UserSummary {
+  const u = flatten(raw);
+  return {
+    id: str(u['id'], u['user_id']) ?? '',
+    username: str(u['username'], u['name']) ?? 'Anonymous',
+    pictureUrl: pictureUrl(u['profile_picture'] ?? u['picture']),
+  };
+}
+
+export function toUser(raw: unknown): UserProfile {
+  const u = flatten(unwrapResult(isObject(raw) && isObject(raw['user']) ? raw['user'] : raw));
+  const firstName = str(u['first_name'], u['firstname']);
+  const lastName = str(u['last_name'], u['lastname']);
+  const username = str(u['username']) ?? '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || str(u['name'], u['names'], u['display_name']);
+  const twoFactor = u['two_factor_enabled'] ?? u['two_factor'] ?? u['totp_enabled'];
+  return {
+    id: str(u['id'], u['user_id']) ?? '',
+    username,
+    email: str(u['email']),
+    firstName,
+    lastName,
+    displayName: fullName || username,
+    role: toRole(u),
+    emailVerified: typeof u['email_verified'] === 'boolean' ? u['email_verified'] : undefined,
+    pictureUrl: pictureUrl(u['profile_picture'] ?? u['picture']),
+    twoFactorEnabled: typeof twoFactor === 'boolean' ? twoFactor : undefined,
+    createdAt: time(u['created_at'], u['created_at_ms']),
+    raw: u,
+  };
+}
+
+export function toAuthorPage(raw: unknown, page = 1, size = 20): AuthorPage {
+  const r = isObject(raw) ? raw : {};
+  const author = isObject(r['author']) ? r['author'] : {};
+  const stats = isObject(r['stats']) ? r['stats'] : {};
+  const following = num(stats['following']);
+  return {
+    author: {
+      ...toUserSummary(author),
+      followedByMe: author['followed_by_me'] === true,
+      deleted: author['deleted'] === true,
+    },
+    stats: {
+      reflections: num(stats['reflections']) ?? 0,
+      likesReceived: num(stats['likes_received']) ?? 0,
+      followers: num(stats['followers']) ?? 0,
+      following: following ?? null,
+    },
+    reflections: toPage(r, toReflection, page, size),
+  };
+}
+
+export function toNotification(raw: unknown): AppNotification {
+  const n = flatten(raw);
+  const reflection = isObject(n['reflection']) ? n['reflection'] : undefined;
+  const comment = isObject(n['comment']) ? n['comment'] : undefined;
+  return {
+    id: str(n['id']) ?? '',
+    kind: str(n['kind'], n['type']) ?? 'activity',
+    actor: isObject(n['actor']) ? toUserSummary(n['actor']) : undefined,
+    actorCount: num(n['actor_count']) ?? 1,
+    reflectionId: str(reflection?.['id'], n['reflection_id']),
+    reflectionSurah: num(reflection?.['surah_id'], reflection?.['surah']),
+    reflectionAyah: num(reflection?.['ayah_id'], reflection?.['ayah']),
+    commentText: str(comment?.['text'], n['comment_text']),
+    read: n['read'] === true || !!n['read_at'],
+    createdAt: time(n['updated_at'], n['created_at']),
+  };
+}
+
+export function toReading(raw: unknown): ReadingStatus {
+  const r = isObject(raw) ? raw : {};
+  const p = isObject(r['position']) ? flatten(r['position']) : undefined;
+  const s = isObject(r['streak']) ? r['streak'] : {};
+  const surah = num(p?.['surah_id'], p?.['surah']);
+  const ayah = num(p?.['ayah_id'], p?.['ayah']);
+  return {
+    position:
+      p && surah && ayah
+        ? {
+            surah,
+            ayah,
+            quranType: str(p['quran_type']),
+            textAr: str(p['text_ar']),
+            translation: str(p['translation']),
+          }
+        : undefined,
+    streak: {
+      current: num(s['current']) ?? 0,
+      longest: num(s['longest']) ?? 0,
+      lastReadDate: str(s['last_read_date']),
+      readToday: s['read_today'] === true,
+      timeZone: str(s['time_zone']),
+    },
+  };
+}
+
+export function toHistoryEntry(raw: unknown): ReadingHistoryEntry {
+  const h = flatten(raw);
+  return {
+    surah: num(h['surah_id'], h['surah']) ?? 0,
+    ayah: num(h['ayah_id'], h['ayah']) ?? 0,
+    at: time(h['read_at'], h['updated_at'], h['created_at']),
+  };
+}
+
+export function toReportGroup(raw: unknown): ReportGroup {
+  const g = flatten(raw);
+  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
+  const reportsField = g['reports'];
+  return {
+    reflection: toReflection(g['reflection'] ?? g),
+    reports: Array.isArray(reportsField) ? reportsField.length : (num(reportsField, g['report_count'], g['count']) ?? 0),
+    reasons: strings(g['reasons']),
+    notes: strings(g['notes']),
+  };
+}
+
+export function toFollow(raw: unknown): FollowEntry {
+  const f = flatten(raw);
+  const kind = (str(f['kind']) ?? 'user') as FollowKind;
+  const target = str(f['target'], f['target_id'], f['id']) ?? '';
+  const user = isObject(f['user']) ? f['user'] : undefined;
+  const label =
+    kind === 'user'
+      ? (str(user?.['username'], f['username'], f['label']) ?? target)
+      : kind === 'ayah'
+        ? target
+        : (str(f['label'], f['excerpt']) ?? 'A reflection');
+  return { kind, target, label, at: time(f['followed_at_ms'], f['created_at']) };
+}
+
+export function toFeedItem(raw: unknown): FeedItem {
+  const f = isObject(raw) ? raw : {};
+  const because = f['because'];
+  return {
+    reflection: toReflection(f),
+    because: Array.isArray(because) ? because.filter((b): b is string => typeof b === 'string') : [],
+  };
 }

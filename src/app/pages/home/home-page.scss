@@ -342,3 +342,9 @@
     line-height: 1.6;
   }
 }
+
+.join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

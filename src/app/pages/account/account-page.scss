@@ -1,0 +1,144 @@
+.panel {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+}
+
+.picture {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.picture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  flex: 1;
+  min-width: 200px;
+
+  small {
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+}
+
+.file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--tb-radius-field);
+  border: 1px solid var(--tb-gold-soft);
+  color: var(--tb-gold);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--tb-teal);
+    outline-offset: 2px;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.facts {
+  margin: 0;
+  display: grid;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--tb-line);
+    font-size: 14px;
+  }
+
+  dt {
+    color: var(--tb-muted);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enroll {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.qr {
+  border-radius: 12px;
+  background: #fff;
+  padding: 6px;
+}
+
+.secret {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+
+  code {
+    font-size: 14px;
+    word-break: break-all;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--tb-field);
+    border: 1px solid var(--tb-line);
+  }
+}
+
+.open-app {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ok {
+  color: var(--tb-teal);
+  vertical-align: -3px;
+}
+
+.danger {
+  border-color: rgba(var(--ion-color-danger-rgb), 0.35);
+  margin-top: 4px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ion-color-danger);
+  }
+}

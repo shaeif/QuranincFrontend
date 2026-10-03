@@ -17,6 +17,7 @@ import { forkJoin } from 'rxjs';
 import { LikedVerse, Page } from '../../core/api/models';
 import { QuranApi, VerseOfTheDay } from '../../core/api/quran-api';
 import { getSurah, SURAHS, TOTAL_AYAHS, verseRef } from '../../core/quran/surahs';
+import { AuthService } from '../../core/auth/auth.service';
 import { LastReadService } from '../../core/settings/last-read.service';
 import { hijriDate, partOfDay } from '../../core/util/format';
 import { Loadable } from '../../core/util/loadable';
@@ -26,7 +27,7 @@ import { NotifyService } from '../../shared/notify.service';
 import { ReflectionCard } from '../../shared/reflection-card';
 import { StarNumber } from '../../shared/star-number';
 import { StateView } from '../../shared/state-view';
-import { ThemeToggle } from '../../shared/theme-toggle';
+import { HeaderActions } from '../../shared/header-actions';
 
 @Component({
   selector: 'app-home-page',
@@ -47,7 +48,7 @@ import { ThemeToggle } from '../../shared/theme-toggle';
     ReflectionCard,
     StarNumber,
     StateView,
-    ThemeToggle,
+    HeaderActions,
   ],
   templateUrl: './home-page.html',
   styleUrl: './home-page.scss',
@@ -56,6 +57,11 @@ export class HomePage implements OnInit {
   private readonly quran = inject(QuranApi);
   private readonly notify = inject(NotifyService);
   protected readonly lastRead = inject(LastReadService);
+  protected readonly auth = inject(AuthService);
+  protected readonly firstName = computed(() => {
+    const u = this.auth.user();
+    return u ? u.firstName || u.username : '';
+  });
 
   protected readonly votd = new Loadable<VerseOfTheDay>();
   protected readonly mostLiked = new Loadable<Page<LikedVerse>>();
@@ -109,7 +115,4 @@ export class HomePage implements OnInit {
     this.notify.share('Verse of the day', text);
   }
 
-  protected join(): void {
-    this.notify.show('Sign-up opens in the next update, in shā’ Allāh.');
-  }
 }

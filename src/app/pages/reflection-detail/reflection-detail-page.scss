@@ -1,12 +1,12 @@
-.actions {
+.bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-}
+  gap: 6px;
 
-.edited {
-  font-size: 12px;
+  &.small {
+    margin-top: -14px;
+  }
 }
 
 .comments {
@@ -19,38 +19,64 @@
 
 .comment {
   padding: 12px 14px;
-  display: grid;
-  gap: 4px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.c-body {
+  flex: 1;
+  min-width: 0;
 
   header {
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     font-size: 13px;
+  }
+
+  a {
+    color: var(--tb-fg);
+    font-weight: 700;
+    text-decoration: none;
   }
 
   time {
     font-size: 12px;
   }
 
+  .del {
+    margin-inline-start: auto;
+    --color: var(--tb-muted);
+    height: 24px;
+  }
+
   p {
-    margin: 0;
+    margin: 4px 0 0;
     line-height: 1.55;
     white-space: pre-line;
     overflow-wrap: anywhere;
   }
 }
 
-.comment-cta {
-  font: inherit;
+.compose {
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+
+  ion-textarea {
+    width: 100%;
+  }
+}
+
+.compose-cta {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 14px 16px;
   color: var(--tb-muted);
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
+  text-decoration: none;
 
   ion-icon {
     color: var(--tb-gold);

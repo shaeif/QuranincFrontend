@@ -34,8 +34,30 @@
       </div>
     </section>
 
+    <section class="tb-section" aria-labelledby="script-title">
+      <div class="tb-section-head"><h2 id="script-title">Quran text</h2></div>
+      <p class="tb-muted note">The Arabic is always shown. Choose its script, and which lines appear under it.</p>
+      <div class="scripts" role="radiogroup" aria-labelledby="script-title">
+        @for (sc of scripts; track sc.type) {
+          <button type="button" role="radio" class="script tb-tile" [class.on]="reading.arabicType() === sc.type"
+            [attr.aria-checked]="reading.arabicType() === sc.type" (click)="reading.setArabicType(sc.type)">
+            <span class="theme-text"><b>{{ sc.name }}</b><small>{{ sc.description }}</small></span>
+            <span class="radio" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+      <div class="panel tb-tile">
+        <ion-toggle [checked]="reading.showTranslation()" (ionChange)="reading.setShowTranslation($event.detail.checked)" justify="space-between">
+          English translation (Sahih International)
+        </ion-toggle>
+        <ion-toggle [checked]="reading.showTransliteration()" (ionChange)="reading.setShowTransliteration($event.detail.checked)" justify="space-between">
+          Transliteration (Arabic sounds in Latin letters)
+        </ion-toggle>
+      </div>
+    </section>
+
     <section class="tb-section" aria-labelledby="reading-title">
-      <div class="tb-section-head"><h2 id="reading-title">Reading</h2></div>
+      <div class="tb-section-head"><h2 id="reading-title">Text size</h2></div>
       <div class="panel tb-tile">
         <p class="sample tb-quran" lang="ar" [style.font-size.px]="reading.arabicSize()">{{ sample }}</p>
         <ion-range
@@ -50,13 +72,6 @@
           <span slot="start" class="range-label small" lang="ar">أ</span>
           <span slot="end" class="range-label large" lang="ar">أ</span>
         </ion-range>
-        <ion-toggle
-          [checked]="reading.showTranslation()"
-          (ionChange)="reading.setShowTranslation($event.detail.checked)"
-          justify="space-between"
-        >
-          Show English translation
-        </ion-toggle>
       </div>
     </section>
 
@@ -64,8 +79,7 @@
       <div class="tb-section-head"><h2 id="about-title">About</h2></div>
       <dl class="about tb-tile">
         <div><dt>Translation</dt><dd>Sahih International</dd></div>
-        <div><dt>Arabic text</dt><dd>Uthmani script</dd></div>
-        <div><dt>Saved on this device</dt><dd>Theme, text size and where you stopped reading</dd></div>
+        <div><dt>Saved on this device</dt><dd>Theme, Quran text choices, text size and where you stopped reading</dd></div>
         <div><dt>Server</dt><dd class="mono">{{ apiUrl }}</dd></div>
       </dl>
     </section>

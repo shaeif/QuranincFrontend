@@ -22,9 +22,10 @@ import { QuranApi } from '../../core/api/quran-api';
 import { SearchApi, SearchEverything } from '../../core/api/search-api';
 import { verseRef } from '../../core/quran/surahs';
 import { LoadStatus, Loadable } from '../../core/util/loadable';
+import { Avatar } from '../../shared/avatar';
 import { ReflectionCard } from '../../shared/reflection-card';
 import { StateView } from '../../shared/state-view';
-import { ThemeToggle } from '../../shared/theme-toggle';
+import { HeaderActions } from '../../shared/header-actions';
 
 type Mode = 'all' | 'quran' | 'reflections';
 const PAGE_SIZE = 20;
@@ -50,9 +51,10 @@ interface ListPage<T> {
     IonSegmentButton,
     IonTitle,
     IonToolbar,
+    Avatar,
     ReflectionCard,
     StateView,
-    ThemeToggle,
+    HeaderActions,
   ],
   templateUrl: './search-page.html',
   styleUrl: './search-page.scss',

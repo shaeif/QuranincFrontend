@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiClient } from './api-client';
-import { Page, Reflection, SearchVerse, TagCount } from './models';
-import { field, toPage, toReflection, toSearchVerse, toTag } from './normalize';
+import { Page, Reflection, SearchVerse, TagCount, UserSummary } from './models';
+import { field, toPage, toReflection, toSearchVerse, toTag, toUserSummary } from './normalize';
 
-export type SearchSection = 'quran' | 'reflections' | 'tags';
+export type SearchSection = 'quran' | 'reflections' | 'tags' | 'users';
 
 export interface SearchEverything {
   query: string;
@@ -12,6 +12,8 @@ export interface SearchEverything {
   quran: Page<SearchVerse>;
   reflections: Page<Reflection>;
   tags: Page<TagCount>;
+  /** Null when signed out (the API only searches people for signed-in users). */
+  users: Page<UserSummary> | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,6 +34,7 @@ export class SearchApi {
         quran: toPage(field(raw, 'quran'), toSearchVerse, page, size),
         reflections: toPage(field(raw, 'reflections'), toReflection, page, size),
         tags: toPage(field(raw, 'tags'), toTag, page, size),
+        users: field(raw, 'users') ? toPage(field(raw, 'users'), toUserSummary, page, size) : null,
       })),
     );
   }

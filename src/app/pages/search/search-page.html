@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border tb-header">
   <ion-toolbar>
     <ion-title>Search</ion-title>
-    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -44,7 +44,7 @@
       @switch (all.status()) {
         @case ('ready') {
           @let res = all.data()!;
-          @if (res.quran.total + res.reflections.total + res.tags.items.length === 0) {
+          @if (res.quran.total + res.reflections.total + res.tags.items.length + (res.users?.items?.length ?? 0) === 0) {
             <app-state-view state="empty" message="Nothing matched. Try fewer words, or the other language." />
           }
           @if (res.quran.items.length) {
@@ -56,6 +56,19 @@
                 }
               </div>
               <ng-container *ngTemplateOutlet="verseList; context: { $implicit: res.quran.items }" />
+            </section>
+          }
+          @if (res.users?.items?.length) {
+            <section class="tb-section">
+              <div class="tb-section-head"><h2>People</h2></div>
+              <div class="people">
+                @for (u of res.users!.items; track u.id) {
+                  <a class="person tb-tile" [routerLink]="['/users', u.id]">
+                    <app-avatar [name]="u.username" [src]="u.pictureUrl" [size]="28" />
+                    <span>{{ '@' + u.username }}</span>
+                  </a>
+                }
+              </div>
             </section>
           }
           @if (res.tags.items.length) {

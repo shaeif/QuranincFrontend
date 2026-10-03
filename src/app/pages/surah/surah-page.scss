@@ -33,14 +33,32 @@
 }
 
 .controls {
+  display: grid;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--tb-glass-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.script {
+  --placeholder-color: var(--tb-muted);
+  font-weight: 600;
+  color: var(--tb-gold);
+}
+
+.extras {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .size {
+  margin-inline-start: auto;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -88,6 +106,18 @@
 
 .ayah-actions ion-button {
   --color: var(--tb-muted);
+
+  &.on {
+    --color: var(--tb-gold);
+  }
+}
+
+.tl {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--tb-teal);
 }
 
 .ar {

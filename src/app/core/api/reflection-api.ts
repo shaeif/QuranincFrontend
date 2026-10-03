@@ -1,14 +1,24 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiClient } from './api-client';
-import { Page, Reflection, ReflectionComment, ReflectionSort, TagCount } from './models';
-import { extractArray, field, toComment, toPage, toReflection, toTag, unwrapResult } from './normalize';
+import { Page, Reflection, ReflectionComment, ReflectionSort, ReportGroup, TagCount } from './models';
+import { extractArray, field, toComment, toPage, toReflection, toReportGroup, toTag, unwrapResult } from './normalize';
 
 export interface PageQuery {
   page?: number;
   size?: number;
   sort?: ReflectionSort;
 }
+
+export interface ReflectionDraft {
+  reflection: string;
+  surahId: number;
+  ayahId: number;
+  tags: string[];
+  highlightText?: string;
+}
+
+export type ReportReason = 'spam' | 'offensive' | 'incorrect' | 'other';
 
 export interface TagCloud {
   tags: TagCount[];
@@ -64,6 +74,71 @@ export class ReflectionApi {
         reflections: Number(field(raw, 'reflections')) || 0,
       })),
     );
+  }
+
+  /* ---------- Writing ---------- */
+
+  /** POST /reflection/create */
+  create(d: ReflectionDraft): Observable<Reflection> {
+    const body: Record<string, unknown> = { reflection: d.reflection, surah_id: d.surahId, ayah_id: d.ayahId, tags: d.tags };
+    if (d.highlightText?.trim()) body['highlight_text'] = d.highlightText.trim();
+    return this.api.post('/reflection/create', body).pipe(map((raw) => toReflection(unwrapResult(raw))));
+  }
+
+  /** PUT /reflection/<id> (author only): text, highlight and tags. */
+  update(id: string, changes: { reflection?: string; highlightText?: string; tags?: string[] }): Observable<Reflection> {
+    const body: Record<string, unknown> = {};
+    if (changes.reflection !== undefined) body['reflection'] = changes.reflection;
+    if (changes.highlightText !== undefined) body['highlight_text'] = changes.highlightText;
+    if (changes.tags !== undefined) body['tags'] = changes.tags;
+    return this.api.put(`/reflection/${encodeURIComponent(id)}`, body).pipe(
+      map((raw) => {
+        const r = toReflection(unwrapResult(raw));
+        return { ...r, id: r.id || id };
+      }),
+    );
+  }
+
+  /** DELETE /reflection/delete?id= (author or moderator) */
+  remove(id: string): Observable<unknown> {
+    return this.api.delete('/reflection/delete', { id });
+  }
+
+  /** POST or DELETE /reflection/<id>/like */
+  like(id: string, on: boolean): Observable<{ liked: boolean; count: number }> {
+    const path = `/reflection/${encodeURIComponent(id)}/like`;
+    return (on ? this.api.post(path) : this.api.delete(path)).pipe(
+      map((r) => ({ liked: field(r, 'liked_by_me') === true, count: Number(field(r, 'like_count')) || 0 })),
+    );
+  }
+
+  /** POST /reflection/<id>/comments */
+  addComment(id: string, text: string): Observable<ReflectionComment> {
+    return this.api.post(`/reflection/${encodeURIComponent(id)}/comments`, { text }).pipe(map(toComment));
+  }
+
+  /** DELETE /reflection/<id>/comments/<comment_id> (comment author, reflection author or moderator) */
+  deleteComment(id: string, commentId: string): Observable<unknown> {
+    return this.api.delete(`/reflection/${encodeURIComponent(id)}/comments/${encodeURIComponent(commentId)}`);
+  }
+
+  /** POST /reflection/<id>/report */
+  report(id: string, reason: ReportReason, note?: string): Observable<unknown> {
+    const body: Record<string, string> = { reason };
+    if (note?.trim()) body['note'] = note.trim();
+    return this.api.post(`/reflection/${encodeURIComponent(id)}/report`, body);
+  }
+
+  /* ---------- Moderation ---------- */
+
+  /** GET /reflection/reports (moderators): open reports, most reported first. */
+  reports(): Observable<ReportGroup[]> {
+    return this.api.get('/reflection/reports').pipe(map((raw) => extractArray(raw).map(toReportGroup)));
+  }
+
+  /** PUT /reflection/<id>/moderation */
+  moderate(id: string, status: 'hidden' | 'published'): Observable<unknown> {
+    return this.api.put(`/reflection/${encodeURIComponent(id)}/moderation`, { status });
   }
 
   private page(path: string, filters: Record<string, string | number>, q: PageQuery): Observable<Page<Reflection>> {
