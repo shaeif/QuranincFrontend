@@ -1,0 +1,45 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-title>The Quran</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    <section class="intro tb-pattern">
+      <p class="tb-eyebrow">114 surahs · 6,236 ayahs</p>
+      <h1 class="tb-display">Choose a surah</h1>
+      <ion-searchbar
+        class="tb-searchbar"
+        placeholder="Name, meaning or number"
+        [debounce]="150"
+        [value]="query()"
+        (ionInput)="query.set($any($event).detail.value ?? '')"
+        aria-label="Filter surahs"
+      />
+      <ion-segment class="tb-segment" [value]="filter()" (ionChange)="setFilter($event.detail.value)">
+        <ion-segment-button value="all">All</ion-segment-button>
+        <ion-segment-button value="Meccan">Meccan</ion-segment-button>
+        <ion-segment-button value="Medinan">Medinan</ion-segment-button>
+      </ion-segment>
+    </section>
+
+    <ul class="list">
+      @for (s of surahs(); track s.number) {
+        <li>
+          <a class="row tb-tile tb-hover" [routerLink]="['/quran', s.number]" [class.current]="lastRead.position()?.surah === s.number">
+            <app-star-number [value]="s.number" />
+            <span class="names">
+              <b>{{ s.name }}</b>
+              <small>{{ s.meaning }} · {{ s.revelation }} · {{ s.ayahs }} ayahs</small>
+            </span>
+            <span class="arabic tb-quran" lang="ar">{{ s.arabic }}</span>
+          </a>
+        </li>
+      } @empty {
+        <app-state-view state="empty" message="No surah matches that. Try a number from 1 to 114, or a name like Yasin." />
+      }
+    </ul>
+  </div>
+</ion-content>

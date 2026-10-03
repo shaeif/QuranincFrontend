@@ -1,0 +1,156 @@
+/*
+ * Tadabbur design tokens.
+ *
+ * Pearl & Gold (light) is the default and lives on :root.
+ * Celestial Night (dark) is applied by ThemeService through Ionic's
+ * `.ion-palette-dark` class on <html>. Components only ever read the
+ * --tb-* and --ion-* tokens, so both themes stay in step.
+ */
+
+// Eight-pointed star tile (two overlapping squares), tinted per theme.
+@function star-pattern($stroke, $opacity) {
+  @return url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='#{$stroke}' stroke-opacity='#{$opacity}' stroke-width='.8'%3E%3Crect x='21' y='21' width='22' height='22'/%3E%3Crect x='21' y='21' width='22' height='22' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+// Ionic needs each brand colour as hex, rgb, contrast, shade and tint.
+@mixin ion-color($name, $base, $rgb, $contrast, $contrast-rgb, $shade, $tint) {
+  --ion-color-#{$name}: #{$base};
+  --ion-color-#{$name}-rgb: #{$rgb};
+  --ion-color-#{$name}-contrast: #{$contrast};
+  --ion-color-#{$name}-contrast-rgb: #{$contrast-rgb};
+  --ion-color-#{$name}-shade: #{$shade};
+  --ion-color-#{$name}-tint: #{$tint};
+}
+
+/* ---------- Pearl & Gold (default) ---------- */
+:root {
+  color-scheme: light;
+
+  --tb-bg: #f7f5ef;
+  --tb-bg-rgb: 247, 245, 239;
+  --tb-surface: #ffffff;
+  --tb-fg: #1b2433;
+  --tb-fg-rgb: 27, 36, 51;
+  --tb-muted: #626a79;
+  --tb-line: rgba(27, 36, 51, 0.11);
+
+  --tb-gold: #85641f; // text-safe gold (4.9:1 on pearl)
+  --tb-gold-soft: #c9a24e; // decoration only
+  --tb-teal: #2e6f78;
+
+  --tb-glass: rgba(255, 255, 255, 0.74);
+  --tb-glass-strong: rgba(255, 255, 255, 0.9);
+  --tb-glass-line: rgba(169, 131, 47, 0.26);
+  --tb-glass-shadow: 0 14px 34px rgba(27, 36, 51, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --tb-chip-bg: rgba(46, 111, 120, 0.08);
+  --tb-chip-line: rgba(46, 111, 120, 0.22);
+  --tb-chip-fg: #2e6f78;
+  --tb-field: rgba(255, 255, 255, 0.86);
+
+  --tb-glow: 0 8px 20px rgba(133, 100, 31, 0.22);
+  --tb-text-glow: none;
+  --tb-accent-gradient: linear-gradient(135deg, #d8b866, #a9832f);
+  --tb-page-glow:
+    radial-gradient(120% 60% at 100% 0%, rgba(216, 184, 102, 0.22), transparent 60%),
+    radial-gradient(90% 50% at 0% 100%, rgba(46, 111, 120, 0.07), transparent 70%);
+  --tb-pattern: #{star-pattern('%23A9832F', 0.2)};
+  --tb-tabbar-bg: rgba(255, 255, 255, 0.86);
+
+  --tb-font-display: 'Italiana', 'Marcellus', Georgia, serif;
+  --tb-font-body: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tb-font-quran: 'Scheherazade New', 'Amiri Quran', 'Noto Naskh Arabic', 'Geeza Pro', serif;
+  --tb-display-tracking: 0.01em;
+  --tb-display-scale: 1.12; // Italiana runs small, so headings are set a little larger
+
+  --tb-radius-card: 22px;
+  --tb-radius-field: 999px;
+  --tb-radius-chip: 999px;
+
+  /* Ionic */
+  --ion-font-family: var(--tb-font-body);
+  --ion-background-color: #f7f5ef;
+  --ion-background-color-rgb: 247, 245, 239;
+  --ion-text-color: #1b2433;
+  --ion-text-color-rgb: 27, 36, 51;
+  --ion-border-color: var(--tb-line);
+  --ion-toolbar-background: transparent;
+  --ion-toolbar-border-color: transparent;
+  --ion-tab-bar-background: var(--tb-tabbar-bg);
+  --ion-tab-bar-border-color: var(--tb-line);
+  --ion-tab-bar-color: var(--tb-muted);
+  --ion-tab-bar-color-selected: var(--tb-gold);
+  --ion-item-background: transparent;
+  --ion-card-background: var(--tb-glass);
+  --ion-placeholder-color: var(--tb-muted);
+
+  @include ion-color(primary, #85641f, '133, 100, 31', #ffffff, '255, 255, 255', #75581b, #917435);
+  @include ion-color(secondary, #2e6f78, '46, 111, 120', #ffffff, '255, 255, 255', #28626a, #437d86);
+  @include ion-color(tertiary, #1b2433, '27, 36, 51', #ffffff, '255, 255, 255', #18202d, #323a47);
+  @include ion-color(medium, #626a79, '98, 106, 121', #ffffff, '255, 255, 255', #565d6a, #727986);
+}
+
+/* ---------- Celestial Night ---------- */
+// Matches Ionic's own `.ion-palette-dark.md/.ios` selectors with one more
+// element so these values win.
+html.ion-palette-dark,
+html.ion-palette-dark.md,
+html.ion-palette-dark.ios {
+  color-scheme: dark;
+
+  --tb-bg: #070b1a;
+  --tb-bg-rgb: 7, 11, 26;
+  --tb-surface: #0e1530;
+  --tb-fg: #eef0fa;
+  --tb-fg-rgb: 238, 240, 250;
+  --tb-muted: #99a1c4;
+  --tb-line: rgba(160, 175, 230, 0.15);
+
+  --tb-gold: #e8c26a;
+  --tb-gold-soft: #f1d48e;
+  --tb-teal: #3de0c8;
+
+  --tb-glass: rgba(255, 255, 255, 0.045);
+  --tb-glass-strong: rgba(20, 27, 54, 0.92);
+  --tb-glass-line: rgba(232, 194, 106, 0.24);
+  --tb-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 26px rgba(232, 194, 106, 0.07);
+  --tb-chip-bg: rgba(61, 224, 200, 0.1);
+  --tb-chip-line: rgba(61, 224, 200, 0.3);
+  --tb-chip-fg: #3de0c8;
+  --tb-field: rgba(255, 255, 255, 0.05);
+
+  --tb-glow: 0 0 22px rgba(232, 194, 106, 0.42);
+  --tb-text-glow: 0 0 18px rgba(232, 194, 106, 0.32);
+  --tb-accent-gradient: linear-gradient(135deg, #e8c26a, #3de0c8);
+  --tb-page-glow:
+    radial-gradient(120% 55% at 85% 0%, rgba(61, 224, 200, 0.16), transparent 60%),
+    radial-gradient(90% 45% at 0% 25%, rgba(232, 194, 106, 0.11), transparent 60%);
+  --tb-pattern: #{star-pattern('%23E8C26A', 0.17)};
+  --tb-tabbar-bg: rgba(7, 11, 26, 0.82);
+
+  --tb-font-display: 'Marcellus', Georgia, serif;
+  --tb-font-body: 'Sora Variable', 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tb-font-quran: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', 'Geeza Pro', serif;
+  --tb-display-tracking: 0;
+  --tb-display-scale: 1;
+
+  --tb-radius-card: 18px;
+  --tb-radius-field: 14px;
+
+  --ion-background-color: #070b1a;
+  --ion-background-color-rgb: 7, 11, 26;
+  --ion-text-color: #eef0fa;
+  --ion-text-color-rgb: 238, 240, 250;
+  --ion-toolbar-background: transparent;
+  --ion-item-background: transparent;
+  --ion-card-background: var(--tb-glass);
+  --ion-tab-bar-background: var(--tb-tabbar-bg);
+  --ion-tab-bar-color: var(--tb-muted);
+  --ion-tab-bar-color-selected: var(--tb-gold);
+  --ion-border-color: var(--tb-line);
+  --ion-placeholder-color: var(--tb-muted);
+
+  @include ion-color(primary, #e8c26a, '232, 194, 106', #1a1405, '26, 20, 5', #ccab5d, #eac879);
+  @include ion-color(secondary, #3de0c8, '61, 224, 200', #04201b, '4, 32, 27', #36c5b0, #50e3ce);
+  @include ion-color(tertiary, #eef0fa, '238, 240, 250', #070b1a, '7, 11, 26', #d1d3dc, #f0f2fb);
+  @include ion-color(medium, #99a1c4, '153, 161, 196', #070b1a, '7, 11, 26', #878eac, #a3aaca);
+}

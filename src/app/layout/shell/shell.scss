@@ -1,0 +1,149 @@
+/* ---------- Bottom tabs (phones and tablets) ---------- */
+.tabbar {
+  --background: var(--tb-tabbar-bg);
+  --border: 1px solid var(--tb-line);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding-top: 4px;
+
+  ion-tab-button {
+    --color: var(--tb-muted);
+    --color-selected: var(--tb-gold);
+    font-weight: 600;
+    position: relative;
+
+    &.tab-selected::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 30%;
+      right: 30%;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--tb-gold);
+      box-shadow: var(--tb-glow);
+    }
+  }
+
+  @media (min-width: 992px) {
+    display: none;
+  }
+}
+
+/* ---------- Sidebar (992px and up) ---------- */
+ion-split-pane {
+  --side-width: 264px;
+  --side-max-width: 264px;
+  --border: 1px solid var(--tb-line);
+}
+
+.rail-content {
+  --background: var(--tb-page-glow), var(--tb-bg);
+}
+
+.rail-inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 28px 18px 24px;
+}
+
+.rail-brand {
+  text-decoration: none;
+  padding-inline: 8px;
+}
+
+.rail-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.rail-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  color: var(--tb-muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:hover {
+    color: var(--tb-fg);
+    background: var(--tb-field);
+  }
+
+  &.active {
+    color: var(--tb-gold);
+    background: var(--tb-glass);
+    border-color: var(--tb-glass-line);
+    box-shadow: var(--tb-glass-shadow);
+  }
+}
+
+.rail-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.theme-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--tb-field);
+  border: 1px solid var(--tb-line);
+
+  button {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--tb-muted);
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 17px;
+    }
+
+    &.on {
+      background: var(--tb-glass-strong);
+      color: var(--tb-gold);
+      box-shadow: var(--tb-glass-shadow);
+    }
+  }
+}
+
+.verse {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  display: grid;
+  gap: 2px;
+
+  .tb-quran {
+    font-size: 19px;
+    color: var(--tb-gold);
+    line-height: 1.8;
+    text-shadow: var(--tb-text-glow);
+  }
+}

@@ -1,0 +1,72 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/reflections" text="" /></ion-buttons>
+    <ion-title>Reflection</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    @switch (reflection.status()) {
+      @case ('ready') {
+        @let r = reflection.data()!;
+        <app-reflection-card [reflection]="r" [clamp]="false" />
+
+        <div class="actions">
+          <ion-button fill="outline" (click)="join('like reflections')">
+            <ion-icon slot="start" name="heart-outline" />Like · {{ r.likeCount }}
+          </ion-button>
+          <ion-button fill="outline" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
+            <ion-icon slot="start" name="book-outline" />Read {{ surah()?.name }} {{ r.surah }}:{{ r.ayah }}
+          </ion-button>
+          @if (r.edited) {
+            <span class="edited tb-muted">Edited</span>
+          }
+        </div>
+
+        <section class="tb-section" aria-labelledby="comments-title">
+          <div class="tb-section-head">
+            <h2 id="comments-title">Comments ({{ comments.data()?.total ?? r.commentCount }})</h2>
+          </div>
+          @switch (comments.status()) {
+            @case ('ready') {
+              <ul class="comments">
+                @for (c of comments.data()!.items; track c.id) {
+                  <li class="comment tb-tile">
+                    <header>
+                      <b>{{ '@' + c.authorName }}</b>
+                      <time class="tb-muted">{{ timeAgo(c.createdAt) }}</time>
+                    </header>
+                    <p>{{ c.text }}</p>
+                  </li>
+                } @empty {
+                  <app-state-view state="empty" message="No comments yet." />
+                }
+              </ul>
+            }
+            @case ('error') {
+              <app-state-view state="error" [message]="comments.error()" (retry)="loadComments()" />
+            }
+            @default {
+              <app-state-view state="loading" [rows]="2" />
+            }
+          }
+          <button type="button" class="comment-cta tb-tile" (click)="join('comment')">
+            <ion-icon name="chatbubble-outline" aria-hidden="true" /> Add a comment
+          </button>
+        </section>
+      }
+      @case ('error') {
+        <app-state-view
+          state="error"
+          [message]="reflection.error() === 'Reflection not found' ? 'This reflection was removed or is hidden.' : reflection.error()"
+          (retry)="load()"
+        />
+      }
+      @default {
+        <app-state-view state="loading" [rows]="1" />
+      }
+    }
+  </div>
+</ion-content>

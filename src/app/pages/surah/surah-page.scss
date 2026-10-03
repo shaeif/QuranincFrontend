@@ -1,0 +1,156 @@
+.head {
+  padding: 26px 20px 22px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+
+  h1 {
+    font-size: calc(34px * var(--tb-display-scale));
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.head-ar {
+  text-align: center;
+  font-size: 30px;
+  line-height: 1.7;
+  color: var(--tb-gold);
+  text-shadow: var(--tb-text-glow);
+}
+
+.bismillah {
+  margin-top: 14px !important;
+  padding-top: 14px;
+  border-top: 1px solid var(--tb-line);
+  width: 100%;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1.9;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.size {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--tb-line);
+  border-radius: var(--tb-radius-field);
+  background: var(--tb-field);
+  padding-inline: 4px;
+}
+
+.size-label {
+  font-family: var(--tb-font-quran);
+  font-size: 20px;
+  color: var(--tb-gold);
+  padding-inline: 4px;
+}
+
+.ayahs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.ayah {
+  padding: 14px 4px 18px;
+  border-bottom: 1px solid var(--tb-line);
+  display: grid;
+  gap: 8px;
+  scroll-margin-top: 80px;
+  border-radius: 16px;
+  transition: background-color 0.6s ease;
+
+  &.focus {
+    background: var(--tb-glass);
+    box-shadow: inset 0 0 0 1px var(--tb-glass-line);
+    padding-inline: 14px;
+  }
+}
+
+.ayah-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ayah-actions ion-button {
+  --color: var(--tb-muted);
+}
+
+.ar {
+  margin: 0;
+  line-height: 2.2;
+}
+
+.en {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--tb-muted);
+}
+
+.source {
+  margin: 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pager-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  color: var(--tb-fg);
+  text-decoration: none;
+  min-width: 0;
+
+  &.next {
+    justify-content: flex-end;
+    text-align: right;
+    grid-column: 2;
+  }
+
+  ion-icon {
+    color: var(--tb-gold);
+    flex: none;
+  }
+
+  span {
+    min-width: 0;
+  }
+
+  small {
+    display: block;
+    font-size: 11px;
+    color: var(--tb-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  b {
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

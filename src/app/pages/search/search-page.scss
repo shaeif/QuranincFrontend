@@ -1,0 +1,71 @@
+.intro {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+
+  h1 {
+    font-size: calc(32px * var(--tb-display-scale));
+  }
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+
+  span {
+    font-family: var(--tb-font-quran);
+    font-size: 16px;
+  }
+}
+
+.n {
+  font-family: var(--tb-font-body);
+  font-size: 13px;
+  color: var(--tb-muted);
+  font-variant-numeric: tabular-nums;
+  margin-inline-start: 4px;
+}
+
+.count {
+  margin: 0;
+  font-size: 13px;
+}
+
+.verses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.verse {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  color: var(--tb-fg);
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--tb-gold-soft);
+  }
+}
+
+.ar {
+  font-size: 22px;
+  line-height: 1.95;
+}
+
+.en {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tb-muted);
+}
+
+.ref {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tb-teal);
+}

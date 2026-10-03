@@ -1,0 +1,61 @@
+<ion-split-pane contentId="tb-main" when="lg">
+  <!-- Desktop sidebar (only shown by the split pane on wide screens) -->
+  <ion-menu contentId="tb-main" menuId="tb-rail" [swipeGesture]="false" class="rail">
+    <ion-content class="rail-content">
+      <nav class="rail-inner tb-pattern" aria-label="Main">
+        <a routerLink="/home" class="rail-brand" aria-label="Tadabbur home"><app-brand-mark /></a>
+
+        <ul class="rail-nav">
+          @for (item of nav; track item.tab) {
+            <li>
+              <a [routerLink]="'/' + item.tab" routerLinkActive="active" routerDirection="root" class="rail-link">
+                <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
+                <span>{{ item.label }}</span>
+              </a>
+            </li>
+          }
+          <li>
+            <a routerLink="/settings" routerLinkActive="active" routerDirection="root" class="rail-link">
+              <ion-icon name="settings-outline" aria-hidden="true" />
+              <span>Settings</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="rail-foot">
+          <p class="tb-eyebrow">Theme</p>
+          <div class="theme-switch" role="radiogroup" aria-label="Theme">
+            @for (t of themes; track t.value) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="theme.preference() === t.value"
+                [class.on]="theme.preference() === t.value"
+                (click)="theme.setPreference(t.value)"
+              >
+                <ion-icon [name]="t.icon" aria-hidden="true" />{{ t.label }}
+              </button>
+            }
+          </div>
+          <p class="verse tb-muted">
+            <span class="tb-quran" lang="ar">أَفَلَا يَتَدَبَّرُونَ ٱلْقُرْءَانَ</span>
+            “Do they not reflect upon the Quran?” 4:82
+          </p>
+        </div>
+      </nav>
+    </ion-content>
+  </ion-menu>
+
+  <div class="ion-page" id="tb-main">
+    <ion-tabs>
+      <ion-tab-bar slot="bottom" class="tabbar">
+        @for (item of nav; track item.tab) {
+          <ion-tab-button [tab]="item.tab">
+            <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
+            <ion-label>{{ item.label }}</ion-label>
+          </ion-tab-button>
+        }
+      </ion-tab-bar>
+    </ion-tabs>
+  </div>
+</ion-split-pane>

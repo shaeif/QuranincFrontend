@@ -1,0 +1,173 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <a slot="start" class="brand" routerLink="/home" aria-label="Tadabbur home"><app-brand-mark [compact]="true" /></a>
+    <ion-buttons slot="end">
+      <app-theme-toggle />
+      <ion-button routerLink="/settings" aria-label="Settings" title="Settings">
+        <ion-icon slot="icon-only" name="settings-outline" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content />
+  </ion-refresher>
+
+  <div class="tb-container">
+    <!-- Hero -->
+    <section class="hero tb-pattern">
+      <p class="tb-eyebrow">{{ greeting }} · Assalamu alaikum</p>
+      <h1 class="tb-display">Reflect on every verse</h1>
+      <p class="lede">
+        Read the Quran in Arabic with English, search its meanings, and see what people around the world reflect on.
+      </p>
+      <p class="dates tb-muted">
+        <ion-icon name="time-outline" aria-hidden="true" />{{ today }}@if (hijri) {<span> · {{ hijri }}</span>}
+      </p>
+      <a class="search-launch" routerLink="/search">
+        <ion-icon name="search-outline" aria-hidden="true" />
+        <span>Search the Quran: <span lang="ar">الصبر</span>, mercy, “light upon light”</span>
+      </a>
+    </section>
+
+    <!-- Verse of the day -->
+    <section class="tb-section" aria-labelledby="votd-title">
+      @switch (votd.status()) {
+        @case ('ready') {
+          @let v = verse()!;
+          <article class="votd tb-glass">
+            <div class="votd-head">
+              <p class="tb-eyebrow" id="votd-title"><ion-icon name="sparkles-outline" aria-hidden="true" /> Verse of the day</p>
+              <ion-button fill="clear" size="small" (click)="shareVerse()" aria-label="Share this verse">
+                <ion-icon slot="icon-only" name="share-social-outline" />
+              </ion-button>
+            </div>
+            <p class="votd-ar tb-quran" lang="ar">{{ v.textAr }}<app-ayah-marker [number]="v.ayah" /></p>
+            @if (v.translation) {
+              <p class="votd-en">{{ v.translation }}</p>
+            }
+            <p class="votd-ref">{{ verseSurah()?.name }} · {{ verseSurah()?.meaning }} · {{ v.surah }}:{{ v.ayah }}</p>
+            <div class="votd-actions">
+              <ion-button class="tb-glow" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
+                Read in context <ion-icon slot="end" name="arrow-forward" />
+              </ion-button>
+              <ion-button fill="outline" [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }">
+                Reflections ({{ votd.data()!.reflections.total }})
+              </ion-button>
+            </div>
+          </article>
+        }
+        @case ('error') {
+          <app-state-view state="error" [message]="votd.error()" (retry)="loadVerse()" />
+        }
+        @default {
+          <app-state-view state="loading" [rows]="1" />
+        }
+      }
+    </section>
+
+    <!-- Quick actions -->
+    <nav class="quick" aria-label="Start here">
+      @if (continueSurah(); as s) {
+        <a class="quick-tile tb-tile tb-hover continue" [routerLink]="['/quran', s.number]" [queryParams]="{ ayah: lastRead.position()!.ayah }">
+          <app-star-number [value]="s.number" />
+          <span><b>Continue reading</b><small>{{ s.name }} · ayah {{ lastRead.position()!.ayah }}</small></span>
+        </a>
+      }
+      <a class="quick-tile tb-tile" routerLink="/quran">
+        <span class="qi"><ion-icon name="book-outline" /></span>
+        <span><b>Read</b><small>All {{ surahCount }} surahs</small></span>
+      </a>
+      <a class="quick-tile tb-tile" routerLink="/search">
+        <span class="qi"><ion-icon name="search-outline" /></span>
+        <span><b>Search</b><small>Arabic or English</small></span>
+      </a>
+      <a class="quick-tile tb-tile" routerLink="/reflections">
+        <span class="qi"><ion-icon name="chatbubbles-outline" /></span>
+        <span><b>Reflections</b><small>From the community</small></span>
+      </a>
+    </nav>
+
+    <!-- For curious visitors -->
+    <section class="curious tb-glass" aria-labelledby="curious-title">
+      <div class="curious-text">
+        <p class="tb-eyebrow">New to the Quran?</p>
+        <h2 class="tb-display" id="curious-title">A book that asks to be pondered</h2>
+        <p class="tb-muted">
+          Muslims believe the Quran is the word of God, revealed to the Prophet Muhammad (peace be upon him) over 23 years. <i>Tadabbur</i> means
+          reflecting on it deeply, verse by verse. You don't need an account to start.
+        </p>
+        <ion-button fill="outline" routerLink="/quran/1">Begin with Al-Fatihah, the Opening</ion-button>
+      </div>
+      <dl class="facts">
+        <div><dt>{{ surahCount }}</dt><dd>surahs (chapters)</dd></div>
+        <div><dt>{{ ayahCount }}</dt><dd>ayahs (verses)</dd></div>
+        <div><dt>23</dt><dd>years of revelation</dd></div>
+      </dl>
+    </section>
+
+    <!-- Reflections on today's verse -->
+    @if (votd.status() === 'ready') {
+      @let v = verse()!;
+      <section class="tb-section" aria-labelledby="refl-title">
+        <div class="tb-section-head">
+          <h2 id="refl-title">Reflections on this verse</h2>
+          @if (votd.data()!.reflections.total > 0) {
+            <a [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }">See all</a>
+          }
+        </div>
+        @for (r of votd.data()!.reflections.items; track r.id) {
+          <app-reflection-card [reflection]="r" />
+        } @empty {
+          <app-state-view state="empty" message="No one has shared a reflection on this verse yet." />
+        }
+      </section>
+    }
+
+    <!-- Most-liked verses -->
+    <section class="tb-section" aria-labelledby="liked-title">
+      <div class="tb-section-head">
+        <h2 id="liked-title">Most-loved verses</h2>
+      </div>
+      @switch (mostLiked.status()) {
+        @case ('ready') {
+          <ol class="liked">
+            @for (v of mostLiked.data()!.items; track v.surah + ':' + v.ayah) {
+              <li>
+                <a class="liked-item tb-tile" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
+                  <span class="liked-ar tb-quran" lang="ar">{{ v.textAr }}</span>
+                  @if (v.translation) {
+                    <span class="liked-en">{{ v.translation }}</span>
+                  }
+                  <span class="liked-meta">
+                    <span>{{ verseRef(v.surah, v.ayah) }}</span>
+                    <span class="likes"><ion-icon name="heart" aria-hidden="true" /> {{ v.likeCount }}</span>
+                  </span>
+                </a>
+              </li>
+            } @empty {
+              <app-state-view state="empty" message="Verses people love will appear here." />
+            }
+          </ol>
+        }
+        @case ('error') {
+          <app-state-view state="error" [message]="mostLiked.error()" (retry)="loadMostLiked()" />
+        }
+        @default {
+          <app-state-view state="loading" [rows]="2" />
+        }
+      }
+    </section>
+
+    <!-- Join -->
+    <section class="join tb-pattern tb-tile">
+      <div>
+        <h2 class="tb-display">Keep your reflections in one place</h2>
+        <p class="tb-muted">With an account you can post reflections, like and comment, bookmark verses and keep a reading streak.</p>
+      </div>
+      <ion-button class="tb-glow" (click)="join()">Create an account</ion-button>
+    </section>
+  </div>
+</ion-content>

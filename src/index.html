@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Tadabbur</title>
+  <base href="/">
+  <meta name="description" content="Tadabbur: read the Quran in Arabic with English, search its meanings and see what others reflect on.">
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F7F5EF">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>
+    // Apply the saved theme before the first paint so Night never flashes Pearl.
+    (function () {
+      try {
+        var pref = JSON.parse(localStorage.getItem('tadabbur.theme') || '"pearl"');
+        var night = pref === 'night' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        if (night) {
+          document.documentElement.classList.add('ion-palette-dark');
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#070B1A');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

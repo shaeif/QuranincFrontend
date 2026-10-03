@@ -1,0 +1,8 @@
+{
+  "name": "tadabbur",
+  "app_id": "com.tadabbur.app",
+  "type": "angular-standalone",
+  "integrations": {
+    "capacitor": {}
+  }
+}

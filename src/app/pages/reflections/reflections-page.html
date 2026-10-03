@@ -1,0 +1,75 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-title>Reflections</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content />
+  </ion-refresher>
+
+  <div class="tb-container tb-container--narrow">
+    <section class="intro tb-pattern">
+      <p class="tb-eyebrow">What people take from each verse</p>
+      <h1 class="tb-display">{{ heading() }}</h1>
+      @if (hasFilter()) {
+        <div class="tb-chip-row">
+          @if (filter().surah; as s) {
+            <a class="tb-chip" [routerLink]="['/quran', s]" [queryParams]="filter().ayah ? { ayah: filter().ayah } : {}">
+              <ion-icon name="book-outline" aria-hidden="true" /> Read the verse
+            </a>
+          }
+          <a class="tb-chip" routerLink="/reflections" aria-label="Show all reflections">
+            <ion-icon name="close" aria-hidden="true" /> Show all
+          </a>
+        </div>
+      }
+      @if (!filter().tag) {
+        <ion-segment class="tb-segment" [value]="sort()" (ionChange)="setSort($event.detail.value)" [scrollable]="true">
+          <ion-segment-button value="activity">Active</ion-segment-button>
+          <ion-segment-button value="newest">Newest</ion-segment-button>
+          <ion-segment-button value="likes">Most liked</ion-segment-button>
+          <ion-segment-button value="comments">Discussed</ion-segment-button>
+        </ion-segment>
+      }
+    </section>
+
+    @if (!hasFilter() && tags.status() === 'ready' && tags.data()!.tags.length) {
+      <nav class="tags" aria-label="Popular topics">
+        <p class="tb-eyebrow">Popular topics</p>
+        <div class="tb-chip-row">
+          @for (t of tags.data()!.tags.slice(0, 14); track t.tag) {
+            <a class="tb-chip" routerLink="/reflections" [queryParams]="{ tag: t.tag }">{{ t.tag }} <span class="count">{{ t.count }}</span></a>
+          }
+        </div>
+      </nav>
+    }
+
+    <section class="list" aria-live="polite">
+      @switch (status()) {
+        @case ('ready') {
+          @for (r of items(); track r.id) {
+            <app-reflection-card [reflection]="r" />
+          } @empty {
+            <app-state-view
+              state="empty"
+              [message]="hasFilter() ? 'No reflections here yet. Each verse is waiting for its first reflection.' : 'No reflections yet.'"
+            />
+          }
+        }
+        @case ('error') {
+          <app-state-view state="error" [message]="error()" (retry)="reload()" />
+        }
+        @default {
+          <app-state-view state="loading" [rows]="3" />
+        }
+      }
+    </section>
+  </div>
+
+  <ion-infinite-scroll (ionInfinite)="loadMore($event)" [disabled]="status() !== 'ready' || !hasMore()">
+    <ion-infinite-scroll-content loadingText="Loading more reflections" />
+  </ion-infinite-scroll>
+</ion-content>

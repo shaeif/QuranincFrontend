@@ -1,0 +1,145 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-title>Search</ion-title>
+    <ion-buttons slot="end"><app-theme-toggle /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    <section class="intro tb-pattern">
+      <p class="tb-eyebrow">Arabic or English · “quotes” for an exact phrase</p>
+      <h1 class="tb-display">What are you looking for?</h1>
+      <ion-searchbar
+        class="tb-searchbar"
+        placeholder="Search verses, reflections and topics"
+        [value]="query()"
+        [debounce]="400"
+        (ionInput)="onInput($event.detail.value)"
+        enterkeyhint="search"
+        inputmode="search"
+        aria-label="Search"
+      />
+      <ion-segment class="tb-segment" [value]="mode()" (ionChange)="setMode($event.detail.value)">
+        <ion-segment-button value="all">Everything</ion-segment-button>
+        <ion-segment-button value="quran">Quran</ion-segment-button>
+        <ion-segment-button value="reflections">Reflections</ion-segment-button>
+      </ion-segment>
+    </section>
+
+    @if (!query()) {
+      <section class="tb-section">
+        <p class="tb-eyebrow">Try</p>
+        <div class="tb-chip-row">
+          @for (s of suggestions; track s.q) {
+            <a class="tb-chip" routerLink="/search" [queryParams]="{ q: s.q }">{{ s.label }}</a>
+          }
+        </div>
+        <p class="hint tb-muted">
+          Arabic search ignores diacritics and matches word forms, so <span lang="ar">صبر</span> also finds
+          <span lang="ar">الصَّابِرِينَ</span>.
+        </p>
+      </section>
+    } @else if (mode() === 'all') {
+      @switch (all.status()) {
+        @case ('ready') {
+          @let res = all.data()!;
+          @if (res.quran.total + res.reflections.total + res.tags.items.length === 0) {
+            <app-state-view state="empty" message="Nothing matched. Try fewer words, or the other language." />
+          }
+          @if (res.quran.items.length) {
+            <section class="tb-section">
+              <div class="tb-section-head">
+                <h2>Verses <span class="n">{{ res.quran.total }}</span></h2>
+                @if (res.quran.total > res.quran.items.length) {
+                  <a href="#" (click)="$event.preventDefault(); setMode('quran')">See all</a>
+                }
+              </div>
+              <ng-container *ngTemplateOutlet="verseList; context: { $implicit: res.quran.items }" />
+            </section>
+          }
+          @if (res.tags.items.length) {
+            <section class="tb-section">
+              <div class="tb-section-head"><h2>Topics</h2></div>
+              <div class="tb-chip-row">
+                @for (t of res.tags.items; track t.tag) {
+                  <a class="tb-chip" routerLink="/reflections" [queryParams]="{ tag: t.tag }">{{ t.tag }}</a>
+                }
+              </div>
+            </section>
+          }
+          @if (res.reflections.items.length) {
+            <section class="tb-section">
+              <div class="tb-section-head">
+                <h2>Reflections <span class="n">{{ res.reflections.total }}</span></h2>
+                @if (res.reflections.total > res.reflections.items.length) {
+                  <a href="#" (click)="$event.preventDefault(); setMode('reflections')">See all</a>
+                }
+              </div>
+              @for (r of res.reflections.items; track r.id) {
+                <app-reflection-card [reflection]="r" />
+              }
+            </section>
+          }
+        }
+        @case ('error') {
+          <app-state-view state="error" [message]="all.error()" (retry)="retry()" />
+        }
+        @default {
+          <app-state-view state="loading" [rows]="3" />
+        }
+      }
+    } @else {
+      @switch (status()) {
+        @case ('ready') {
+          <p class="count tb-muted">{{ total() }} {{ mode() === 'quran' ? 'verses' : 'reflections' }} for “{{ query() }}”</p>
+          @if (mode() === 'quran') {
+            @if (verses().length) {
+              <ng-container *ngTemplateOutlet="verseList; context: { $implicit: verses() }" />
+            } @else {
+              <app-state-view state="empty" message="No verses matched. Try another word or the other language." />
+            }
+          } @else {
+            @for (r of reflections(); track r.id) {
+              <app-reflection-card [reflection]="r" />
+            } @empty {
+              <app-state-view state="empty" message="No reflections matched." />
+            }
+          }
+        }
+        @case ('error') {
+          <app-state-view state="error" [message]="error()" (retry)="retry()" />
+        }
+        @default {
+          <app-state-view state="loading" [rows]="3" />
+        }
+      }
+    }
+  </div>
+
+  <ion-infinite-scroll (ionInfinite)="loadMore($event)" [disabled]="mode() === 'all' || status() !== 'ready' || !hasMore()">
+    <ion-infinite-scroll-content loadingText="Loading more" />
+  </ion-infinite-scroll>
+</ion-content>
+
+<ng-template #verseList let-items>
+  <ul class="verses">
+    @for (v of items; track v.surah + ':' + v.ayah) {
+      <li>
+        <a class="verse tb-tile" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
+          @if (v.highlightAr) {
+            <span class="ar tb-quran tb-highlighted" lang="ar" [innerHTML]="v.highlightAr"></span>
+          } @else {
+            <span class="ar tb-quran" lang="ar">{{ v.textAr }}</span>
+          }
+          @if (v.highlightEn) {
+            <span class="en tb-highlighted" [innerHTML]="v.highlightEn"></span>
+          } @else if (v.translation) {
+            <span class="en">{{ v.translation }}</span>
+          }
+          <span class="ref">{{ verseRef(v.surah, v.ayah) }}</span>
+        </a>
+      </li>
+    }
+  </ul>
+</ng-template>

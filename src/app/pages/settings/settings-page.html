@@ -1,0 +1,73 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
+    <ion-title>Settings</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <div class="tb-container tb-container--narrow">
+    <section class="tb-section" aria-labelledby="theme-title">
+      <div class="tb-section-head"><h2 id="theme-title">Theme</h2></div>
+      <div class="themes" role="radiogroup" aria-labelledby="theme-title">
+        @for (t of themes; track t.value) {
+          <button
+            type="button"
+            role="radio"
+            class="theme tb-tile"
+            [class.on]="theme.preference() === t.value"
+            [attr.aria-checked]="theme.preference() === t.value"
+            (click)="theme.setPreference(t.value)"
+          >
+            <span class="preview" [class]="'preview preview--' + t.value" aria-hidden="true">
+              <span class="pv-ar">رَحْمَة</span>
+              <span class="pv-line"></span>
+              <span class="pv-line short"></span>
+            </span>
+            <span class="theme-text">
+              <b>{{ t.name }}</b>
+              <small>{{ t.description }}</small>
+            </span>
+            <span class="radio" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="tb-section" aria-labelledby="reading-title">
+      <div class="tb-section-head"><h2 id="reading-title">Reading</h2></div>
+      <div class="panel tb-tile">
+        <p class="sample tb-quran" lang="ar" [style.font-size.px]="reading.arabicSize()">{{ sample }}</p>
+        <ion-range
+          aria-label="Arabic text size"
+          [min]="sizes.min"
+          [max]="sizes.max"
+          [step]="sizes.step"
+          [snaps]="true"
+          [value]="reading.arabicSize()"
+          (ionInput)="onSize($event.detail.value)"
+        >
+          <span slot="start" class="range-label small" lang="ar">أ</span>
+          <span slot="end" class="range-label large" lang="ar">أ</span>
+        </ion-range>
+        <ion-toggle
+          [checked]="reading.showTranslation()"
+          (ionChange)="reading.setShowTranslation($event.detail.checked)"
+          justify="space-between"
+        >
+          Show English translation
+        </ion-toggle>
+      </div>
+    </section>
+
+    <section class="tb-section" aria-labelledby="about-title">
+      <div class="tb-section-head"><h2 id="about-title">About</h2></div>
+      <dl class="about tb-tile">
+        <div><dt>Translation</dt><dd>Sahih International</dd></div>
+        <div><dt>Arabic text</dt><dd>Uthmani script</dd></div>
+        <div><dt>Saved on this device</dt><dd>Theme, text size and where you stopped reading</dd></div>
+        <div><dt>Server</dt><dd class="mono">{{ apiUrl }}</dd></div>
+      </dl>
+    </section>
+  </div>
+</ion-content>

@@ -1,0 +1,279 @@
+/*
+ * Global styles: fonts, page backdrop and the few shared building blocks
+ * (glass card, chips, Quran text, section headings). Tokens live in
+ * theme/variables.scss.
+ */
+
+/* Self-hosted fonts (work offline in the native app). */
+@import '@fontsource-variable/manrope/index.css';
+@import '@fontsource-variable/sora/index.css';
+@import '@fontsource/italiana/latin-400.css';
+@import '@fontsource/marcellus/latin-400.css';
+@import '@fontsource/scheherazade-new/arabic-400.css';
+@import '@fontsource/scheherazade-new/arabic-700.css';
+@import '@fontsource/amiri-quran/arabic-400.css';
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--tb-bg);
+  color: var(--tb-fg);
+  font-family: var(--tb-font-body);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease;
+}
+
+/* ---------- Page backdrop ---------- */
+ion-content.tb-content {
+  --background: var(--tb-page-glow), var(--tb-bg);
+}
+
+ion-header.tb-header ion-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+ion-header.tb-header.header-collapse-condense-inactive ion-toolbar,
+ion-header.tb-header ion-toolbar {
+  background: rgba(var(--tb-bg-rgb), 0.7);
+}
+
+ion-toolbar ion-title {
+  font-family: var(--tb-font-display);
+  font-weight: 400;
+  letter-spacing: var(--tb-display-tracking);
+}
+
+/* Centered reading column with a 16px+ gutter. */
+.tb-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  display: grid;
+  gap: 28px;
+
+  @media (min-width: 768px) {
+    padding: 24px 32px 56px;
+    gap: 36px;
+  }
+}
+
+.tb-container--narrow {
+  max-width: 760px;
+}
+
+/* ---------- Type ---------- */
+.tb-display {
+  font-family: var(--tb-font-display);
+  font-weight: 400;
+  letter-spacing: var(--tb-display-tracking);
+  line-height: 1.08;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.tb-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tb-gold);
+  margin: 0;
+}
+
+.tb-muted {
+  color: var(--tb-muted);
+}
+
+.tb-quran {
+  font-family: var(--tb-font-quran);
+  direction: rtl;
+  text-align: right;
+  line-height: 2.1;
+  font-feature-settings: 'calt', 'liga';
+  word-spacing: 0.06em;
+}
+
+/* Section heading with an optional "See all" link on the right. */
+.tb-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2 {
+    font-family: var(--tb-font-display);
+    font-weight: 400;
+    letter-spacing: var(--tb-display-tracking);
+    font-size: calc(22px * var(--tb-display-scale));
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tb-gold);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+}
+
+.tb-section {
+  display: grid;
+  gap: 14px;
+}
+
+/* ---------- Surfaces ---------- */
+.tb-glass {
+  background: var(--tb-glass);
+  border: 1px solid var(--tb-glass-line);
+  border-radius: var(--tb-radius-card);
+  box-shadow: var(--tb-glass-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.tb-tile {
+  background: var(--tb-field);
+  border: 1px solid var(--tb-line);
+  border-radius: var(--tb-radius-card);
+}
+
+/* Faint star field, for heroes. */
+.tb-pattern {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--tb-pattern);
+    background-size: 64px 64px;
+    border-radius: inherit;
+    mask-image: linear-gradient(to bottom, #000 10%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 10%, transparent 85%);
+    pointer-events: none;
+  }
+}
+
+.tb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 11px;
+  border-radius: var(--tb-radius-chip);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  background: var(--tb-chip-bg);
+  color: var(--tb-chip-fg);
+  border: 1px solid var(--tb-chip-line);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+button.tb-chip {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.tb-chip--active {
+  background: var(--tb-chip-fg);
+  color: var(--tb-bg);
+}
+
+.tb-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Glow on primary buttons (soft shadow in Pearl, gold halo in Night). */
+ion-button.tb-glow::part(native) {
+  box-shadow: var(--tb-glow);
+}
+
+ion-button {
+  --border-radius: var(--tb-radius-field);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+ion-searchbar.tb-searchbar {
+  --background: var(--tb-field);
+  --border-radius: var(--tb-radius-field);
+  --box-shadow: none;
+  --placeholder-color: var(--tb-muted);
+  --icon-color: var(--tb-gold);
+  padding-inline: 0;
+
+  .searchbar-input-container {
+    border: 1px solid var(--tb-line);
+    border-radius: var(--tb-radius-field);
+  }
+}
+
+ion-segment.tb-segment {
+  --background: var(--tb-field);
+  border: 1px solid var(--tb-line);
+  border-radius: var(--tb-radius-field);
+
+  ion-segment-button {
+    --indicator-color: var(--tb-gold);
+    --color: var(--tb-muted);
+    --color-checked: var(--tb-gold);
+    --border-radius: var(--tb-radius-field);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+    min-height: 38px;
+  }
+}
+
+ion-skeleton-text {
+  --border-radius: 8px;
+}
+
+ion-toast.tb-toast {
+  --background: var(--tb-glass-strong);
+  --color: var(--tb-fg);
+  --border-color: var(--tb-glass-line);
+  --border-style: solid;
+  --border-width: 1px;
+  --border-radius: 14px;
+}
+
+a {
+  color: var(--tb-gold);
+}
+
+:focus-visible {
+  outline: 2px solid var(--tb-teal);
+  outline-offset: 2px;
+}
+
+em.tb-hl,
+.tb-highlighted em {
+  font-style: normal;
+  color: var(--tb-gold);
+  background: linear-gradient(transparent 62%, rgba(201, 162, 78, 0.28) 62%);
+  text-shadow: var(--tb-text-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
