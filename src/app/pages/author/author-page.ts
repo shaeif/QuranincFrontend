@@ -21,6 +21,7 @@ import { errorMessage } from '../../core/api/api-client';
 import { AuthorPage as AuthorData, ReflectionSort } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { LibraryService } from '../../core/auth/library.service';
+import { UserNamesService } from '../../core/auth/user-names.service';
 import { Loadable } from '../../core/util/loadable';
 import { Avatar } from '../../shared/avatar';
 import { HeaderActions } from '../../shared/header-actions';
@@ -133,6 +134,7 @@ export class AuthorPage {
   private readonly auth = inject(AuthService);
   private readonly library = inject(LibraryService);
   private readonly notify = inject(NotifyService);
+  private readonly names = inject(UserNamesService);
 
   protected readonly page = new Loadable<AuthorData>();
   protected readonly sort = signal<ReflectionSort>('newest');
@@ -168,7 +170,10 @@ export class AuthorPage {
   protected load(): void {
     this.pageNo = 1;
     this.followDelta.set(0);
-    this.page.load(this.api.authorPage(this.id(), this.sort()));
+    this.page.load(this.api.authorPage(this.id(), this.sort()), () => {
+      const author = this.page.data()?.author;
+      if (author) this.names.remember(author);
+    });
   }
 
   protected more(e: InfiniteScrollCustomEvent): void {

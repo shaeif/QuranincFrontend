@@ -1,7 +1,8 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { Reflection } from '../core/api/models';
+import { UserNamesService } from '../core/auth/user-names.service';
 import { verseRef } from '../core/quran/surahs';
 import { timeAgo } from '../core/util/format';
 import { Avatar } from './avatar';
@@ -14,15 +15,15 @@ import { Avatar } from './avatar';
     @let r = reflection();
     <article class="card tb-glass" [class.hidden-r]="r.status === 'hidden'">
       @if (link()) {
-        <a class="cover" [routerLink]="['/reflections', r.id]" [attr.aria-label]="'Read reflection by ' + r.authorName"></a>
+        <a class="cover" [routerLink]="['/reflections', r.id]" [attr.aria-label]="'Read reflection by ' + author()"></a>
       }
       <header>
-        <app-avatar [name]="r.authorName" [size]="30" />
+        <app-avatar [name]="author()" [src]="picture()" [size]="30" />
         <span class="who">
           @if (r.authorId) {
-            <a class="author" [routerLink]="['/users', r.authorId]">{{ '@' + r.authorName }}</a>
+            <a class="author" [routerLink]="['/users', r.authorId]">{{ handle() }}</a>
           } @else {
-            <b>{{ '@' + r.authorName }}</b>
+            <b>{{ handle() }}</b>
           }
           <span class="tb-muted"> on </span>
           <a class="ref" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">{{ ref() }}</a>
@@ -84,6 +85,17 @@ export class ReflectionCard {
   readonly clamp = input(true);
   /** Whether the card opens the reflection (off on the reflection's own page). */
   readonly link = input(true);
+
+  private readonly names = inject(UserNamesService);
+
+  /** The API's name if it sent one, else the looked-up username. */
+  private readonly resolved = computed(() => {
+    const r = this.reflection();
+    return !r.authorName && r.authorId ? this.names.get(r.authorId)() : null;
+  });
+  protected readonly author = computed(() => this.reflection().authorName || this.resolved()?.username || '');
+  protected readonly handle = computed(() => (this.author() ? '@' + this.author() : 'A member'));
+  protected readonly picture = computed(() => this.resolved()?.pictureUrl);
 
   protected readonly ref = computed(() => verseRef(this.reflection().surah, this.reflection().ayah));
   protected readonly ago = computed(() => timeAgo(this.reflection().createdAt));

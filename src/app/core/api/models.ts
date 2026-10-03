@@ -26,6 +26,7 @@ export interface Reflection {
   highlightText?: string;
   tags: string[];
   authorId?: string;
+  /** Empty when the API sends only created_by_id; UserNamesService looks it up. */
   authorName: string;
   likeCount: number;
   commentCount: number;

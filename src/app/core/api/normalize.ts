@@ -213,7 +213,7 @@ export function toReflection(raw: unknown): Reflection {
     authorId: str(r['created_by_id'], author['id']),
     authorName:
       str(r['created_by_username'], r['username'], r['author_name'], author['username'],
-        typeof r['created_by'] === 'string' ? r['created_by'] : undefined) ?? 'Anonymous',
+        typeof r['created_by'] === 'string' ? r['created_by'] : undefined) ?? '',
     likeCount: num(r['like_count']) ?? 0,
     commentCount: num(r['comment_count']) ?? 0,
     createdAt: time(r['created_at_ms'], r['created_at'], r['timestamp']),
@@ -317,7 +317,11 @@ export function toAuthorPage(raw: unknown, page = 1, size = 20): AuthorPage {
       followers: num(stats['followers']) ?? 0,
       following: following ?? null,
     },
-    reflections: toPage(r, toReflection, page, size),
+    reflections: (() => {
+      const list = toPage(r, toReflection, page, size);
+      const username = str(author['username']);
+      return { ...list, items: list.items.map((x) => ({ ...x, authorName: x.authorName || username || '' })) };
+    })(),
   };
 }
 

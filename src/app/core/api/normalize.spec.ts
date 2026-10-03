@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractArray, safeHighlight, toAyahTexts, toPage, toReflection, toSearchVerse } from './normalize';
+import { extractArray, safeHighlight, toAuthorPage, toAyahTexts, toPage, toReflection, toSearchVerse } from './normalize';
 
 describe('normalize', () => {
   it('reads a reflection from an Elasticsearch hit', () => {
@@ -10,7 +10,7 @@ describe('normalize', () => {
     });
     expect(r).toMatchObject({ id: 'abc', text: 'Ease travels with hardship', surah: 94, ayah: 6, tags: ['hope'], likeCount: 3, likedByMe: true });
     expect(r.createdAt).toBe(1_700_000_000_000);
-    expect(r.authorName).toBe('Anonymous');
+    expect(r.authorName).toBe('');
   });
 
   it('reads a plain reflection with an author object', () => {
@@ -70,5 +70,20 @@ describe('backend shapes from the API export', () => {
   it('reads reflection hits from listings and the author page', () => {
     const page = toPage({ page: 1, size: 20, total: 1, items: [{ _id: 'r1', _source: { id: 'r1', reflection: 'Text', surah_id: 94, ayah_id: 6, liked_by_me: true } }] }, toReflection);
     expect(page.items[0]).toMatchObject({ id: 'r1', text: 'Text', surah: 94, ayah: 6, likedByMe: true });
+  });
+});
+
+describe('author names', () => {
+  it('fills reflection authors on the author page from the page author', () => {
+    const page = toAuthorPage({
+      author: { id: 'u1', username: 'shaeif.thajudheen' },
+      stats: { reflections: 1 },
+      items: [{ _id: 'r1', _source: { id: 'r1', reflection: 'In the name of Allah', surah_id: 1, ayah_id: 1, created_by_id: 'u1' } }],
+    });
+    expect(page.reflections.items[0].authorName).toBe('shaeif.thajudheen');
+  });
+
+  it('leaves the name empty (to be looked up) when a reflection has only created_by_id', () => {
+    expect(toReflection({ id: 'r1', created_by_id: 'u1' }).authorName).toBe('');
   });
 });
