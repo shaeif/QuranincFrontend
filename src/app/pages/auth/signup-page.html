@@ -13,7 +13,7 @@
         <ion-icon name="mail-outline" class="big-icon" aria-hidden="true" />
         <h1 class="tb-display">Check your email</h1>
         <p>We sent a verification code to <b>{{ form().email }}</b>. Enter it to confirm your address, then log in.</p>
-        <ion-button expand="block" class="tb-glow" routerLink="/verify-email" [queryParams]="{ email: form().email }">Enter the code</ion-button>
+        <ion-button expand="block" class="tb-glow" routerLink="/verify-email">Enter the code</ion-button>
         <div class="tb-auth-links"><a routerLink="/login">Go to log in</a></div>
       } @else {
         <div>
@@ -55,14 +55,45 @@
           </div>
 
           <div class="phone">
-            <ion-input label="Code" labelPlacement="floating" fill="outline" inputmode="tel" autocomplete="tel-country-code"
-              [maxlength]="5" [value]="form().countryCode" (ionInput)="set('countryCode', $event)" />
+            <ion-input label="Country code" labelPlacement="floating" fill="outline" inputmode="tel" autocomplete="tel-country-code"
+              placeholder="+91" [maxlength]="5" [value]="form().countryCode" (ionInput)="set('countryCode', $event)" />
             <ion-input label="Phone (optional)" labelPlacement="floating" fill="outline" type="tel" inputmode="tel" autocomplete="tel-national"
-              [value]="form().phone" (ionInput)="set('phone', $event)" />
+              [value]="form().phone" (ionInput)="set('phone', $event); phoneTaken.set(false)" (ionBlur)="checkPhone()" />
           </div>
-          @if (errors().phone || errors().countryCode) {
-            <p class="tb-field-error">{{ errors().phone || errors().countryCode }}</p>
+          @if (errors().countryCode || errors().phone) {
+            <p class="tb-field-error">{{ errors().countryCode || errors().phone }}</p>
+          } @else if (phoneTaken()) {
+            <p class="tb-field-error">An account already uses this phone number.</p>
+          } @else {
+            <p class="tb-field-hint">Your country calling code is required. The phone number is optional.</p>
           }
+
+          <ion-input label="Country (optional)" labelPlacement="floating" fill="outline" autocomplete="country-name"
+            [value]="form().country" (ionInput)="set('country', $event)" />
+          @if (errors().country) {
+            <p class="tb-field-error">{{ errors().country }}</p>
+          }
+
+          <div class="two">
+            <div class="col">
+              <ion-select label="Gender (optional)" labelPlacement="floating" fill="outline" interface="popover"
+                [value]="form().gender" (ionChange)="set('gender', $event)">
+                <ion-select-option value="">Prefer not to say</ion-select-option>
+                <ion-select-option value="male">Male</ion-select-option>
+                <ion-select-option value="female">Female</ion-select-option>
+              </ion-select>
+              @if (errors().gender) {
+                <p class="tb-field-error">{{ errors().gender }}</p>
+              }
+            </div>
+            <div class="col">
+              <ion-input label="Date of birth (optional)" labelPlacement="stacked" fill="outline" type="date" autocomplete="bday"
+                [max]="today" [value]="form().dateOfBirth" (ionInput)="set('dateOfBirth', $event)" />
+              @if (errors().dateOfBirth) {
+                <p class="tb-field-error">{{ errors().dateOfBirth }}</p>
+              }
+            </div>
+          </div>
 
           <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
             [maxlength]="128" [value]="form().password" (ionInput)="set('password', $event)">

@@ -13,7 +13,6 @@ import {
 } from '@ionic/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificationBadgeService } from '../../core/auth/notification-badge.service';
-import { ThemePreference, ThemeService } from '../../core/theme/theme.service';
 import { Avatar } from '../../shared/avatar';
 import { BrandMark } from '../../shared/brand-mark';
 
@@ -48,7 +47,6 @@ interface NavItem {
   styleUrl: './shell.scss',
 })
 export class Shell {
-  protected readonly theme = inject(ThemeService);
   protected readonly auth = inject(AuthService);
   protected readonly badge = inject(NotificationBadgeService);
 
@@ -67,9 +65,4 @@ export class Shell {
     { tab: 'reading', label: 'Reading', icon: 'flame' },
   ];
 
-  protected readonly themes: { value: ThemePreference; label: string; icon: string }[] = [
-    { value: 'pearl', label: 'Pearl', icon: 'sunny-outline' },
-    { value: 'night', label: 'Night', icon: 'moon-outline' },
-    { value: 'system', label: 'Phone', icon: 'phone-portrait-outline' },
-  ];
 }

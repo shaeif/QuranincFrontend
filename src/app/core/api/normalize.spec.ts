@@ -47,3 +47,28 @@ describe('normalize', () => {
     expect([...toAyahTexts(['a', 'b'])]).toEqual([[1, 'a'], [2, 'b']]);
   });
 });
+
+describe('backend shapes from the API export', () => {
+  it('reads GET /quran/get_surah pages ({data: [{quran_text: {text}}]})', () => {
+    const page1 = { data: [{ quran_text: { text: 'In the name of Allah' } }, { quran_text: { text: 'All praise' } }] };
+    expect([...toAyahTexts(page1)]).toEqual([[1, 'In the name of Allah'], [2, 'All praise']]);
+    // Second page of 100: numbering continues from the offset when items don't carry an ayah number.
+    expect([...toAyahTexts({ data: [{ quran_text: { text: 'x' } }] }, 100)]).toEqual([[101, 'x']]);
+    // An ayah number on the item wins over the position.
+    expect([...toAyahTexts({ data: [{ ayah_id: 7, quran_text: { text: 'y' } }] })]).toEqual([[7, 'y']]);
+  });
+
+  it('puts a plain-string highlight under the language it is written in', () => {
+    const en = toSearchVerse({ surah: 1, ayah: 3, text_ar: 'ٱلرَّحْمَٰنِ', translation: 'The Entirely Merciful', highlight: 'The Entirely <em>Merciful</em>' });
+    expect(en.highlightEn).toBe('The Entirely <em>Merciful</em>');
+    expect(en.highlightAr).toBeUndefined();
+    const ar = toSearchVerse({ surah: 55, ayah: 1, highlight: '<em>ٱلرَّحْمَٰنُ</em>' });
+    expect(ar.highlightAr).toBe('<em>ٱلرَّحْمَٰنُ</em>');
+    expect(ar.highlightEn).toBeUndefined();
+  });
+
+  it('reads reflection hits from listings and the author page', () => {
+    const page = toPage({ page: 1, size: 20, total: 1, items: [{ _id: 'r1', _source: { id: 'r1', reflection: 'Text', surah_id: 94, ayah_id: 6, liked_by_me: true } }] }, toReflection);
+    expect(page.items[0]).toMatchObject({ id: 'r1', text: 'Text', surah: 94, ayah: 6, likedByMe: true });
+  });
+});

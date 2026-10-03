@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TRANSLITERATION_TYPE } from '../quran/quran-texts';
+import { getSurah } from '../quran/surahs';
 import { ApiClient } from './api-client';
 import { LikedVerse, Page, Reflection, SearchVerse, Verse } from './models';
 import { field, toAyahTexts, toLikedVerse, toPage, toReflection, toSearchVerse, toVerse } from './normalize';
@@ -20,6 +21,9 @@ export interface QuranSearchResult {
 }
 
 export type SearchLang = 'auto' | 'ar' | 'en';
+
+/** Largest page GET /quran/get_surah allows. */
+const PAGE_SIZE = 100;
 
 @Injectable({ providedIn: 'root' })
 export class QuranApi {
@@ -76,9 +80,20 @@ export class QuranApi {
     );
   }
 
-  /** GET /quran/<type>/<surah> */
+  /**
+   * A whole surah in one text type. GET /quran/get_surah pages at most 100 ayahs,
+   * so longer surahs (Al-Baqarah has 286) are fetched as several pages in parallel.
+   */
   surahText(surah: number, type: string): Observable<Map<number, string>> {
-    return this.api.get(`/quran/${encodeURIComponent(type)}/${surah}`).pipe(map(toAyahTexts));
+    const count = getSurah(surah)?.ayahs ?? PAGE_SIZE;
+    const pages = Array.from({ length: Math.ceil(count / PAGE_SIZE) }, (_, i) => i + 1);
+    return forkJoin(
+      pages.map((page) =>
+        this.api
+          .get('/quran/get_surah', { quran_type: type, surah_id: surah, page, size: PAGE_SIZE })
+          .pipe(map((raw) => toAyahTexts(raw, (page - 1) * PAGE_SIZE))),
+      ),
+    ).pipe(map((parts) => new Map(parts.flatMap((part) => [...part.entries()]))));
   }
 
   /** GET /quran/search: Arabic or English, "quoted" for an exact phrase. */
@@ -100,12 +115,13 @@ export class QuranApi {
       );
   }
 
-  /** GET /quran/most-liked */
-  mostLiked(opts: { surahId?: number; page?: number; size?: number } = {}): Observable<Page<LikedVerse>> {
-    const page = opts.page ?? 1;
-    const size = opts.size ?? 10;
-    return this.api
-      .get('/quran/most-liked', { surah_id: opts.surahId, page, size })
-      .pipe(map((raw) => toPage(raw, toLikedVerse, page, size)));
+  /** GET /quran/most-liked (optionally one surah); `size` trims the list on this side. */
+  mostLiked(opts: { surahId?: number; size?: number } = {}): Observable<Page<LikedVerse>> {
+    return this.api.get('/quran/most-liked', { surah_id: opts.surahId }).pipe(
+      map((raw) => {
+        const page = toPage(raw, toLikedVerse);
+        return opts.size ? { ...page, items: page.items.slice(0, opts.size) } : page;
+      }),
+    );
   }
 }

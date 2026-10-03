@@ -8,6 +8,7 @@ import {
   IonHeader,
   IonIcon,
   IonInput,
+  IonRouterLink,
   IonSpinner,
   IonTitle,
   IonToolbar,
@@ -22,6 +23,7 @@ import { ThemeToggle } from '../../shared/theme-toggle';
   selector: 'app-verify-email-page',
   imports: [
     RouterLink,
+    IonRouterLink,
     IonBackButton,
     IonButton,
     IonButtons,
@@ -66,13 +68,16 @@ import { ThemeToggle } from '../../shared/theme-toggle';
             </form>
 
             <div class="resend tb-tile">
-              <p class="tb-muted">No email? Check spam, or send a new code (up to 3 an hour).</p>
-              <ion-input label="Email" labelPlacement="floating" fill="outline" type="email" inputmode="email"
-                [value]="emailValue()" (ionInput)="emailValue.set(inputValue($event))" />
-              @if (resent()) {
-                <p class="tb-alert tb-alert--ok" role="status"><ion-icon name="checkmark-circle" />{{ resent() }}</p>
+              @if (auth.isLoggedIn()) {
+                <p class="tb-muted">No email? Check spam, or send a new code to {{ auth.user()?.email ?? 'your address' }}.</p>
+                @if (resent()) {
+                  <p class="tb-alert tb-alert--ok" role="status"><ion-icon name="checkmark-circle" />{{ resent() }}</p>
+                }
+                <ion-button fill="outline" (click)="resend()" [disabled]="resending()">Email me a new code</ion-button>
+              } @else {
+                <p class="tb-muted">No email, or the code expired? Log in and come back here to get a new one.</p>
+                <ion-button fill="outline" routerLink="/login" [queryParams]="{ next: '/verify-email' }">Log in</ion-button>
               }
-              <ion-button fill="outline" (click)="resend()" [disabled]="resending()">Send a new code</ion-button>
             </div>
           }
         </section>
@@ -86,14 +91,12 @@ import { ThemeToggle } from '../../shared/theme-toggle';
 })
 export class VerifyEmailPage {
   readonly token = input<string | undefined>(undefined);
-  readonly email = input<string | undefined>(undefined);
 
   private readonly api = inject(AccountApi);
   protected readonly auth = inject(AuthService);
   protected readonly inputValue = inputValue;
 
   protected readonly code = signal('');
-  protected readonly emailValue = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   protected readonly verified = signal(false);
@@ -103,9 +106,7 @@ export class VerifyEmailPage {
   constructor() {
     effect(() => {
       const token = this.token();
-      const email = this.email() ?? this.auth.user()?.email;
       untracked(() => {
-        if (email) this.emailValue.set(email);
         // A link with ?token= verifies straight away.
         if (token) {
           this.code.set(token);
@@ -134,13 +135,12 @@ export class VerifyEmailPage {
   }
 
   protected resend(): void {
-    const email = this.emailValue().trim();
-    if (!email) return;
     this.resending.set(true);
-    this.api.resendVerification(email).subscribe({
+    this.error.set('');
+    this.api.resendVerification().subscribe({
       next: () => {
         this.resending.set(false);
-        this.resent.set(`If ${email} needs verifying, a new code is on its way.`);
+        this.resent.set('A new code is on its way. It works for 24 hours.');
       },
       error: (err: unknown) => {
         this.resending.set(false);

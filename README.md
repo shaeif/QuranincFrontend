@@ -31,7 +31,7 @@ The choice is saved on the device and applied before first paint, so there is no
 |---|---|---|
 | Home: verse of the day, continue reading, an intro for curious visitors, most-loved verses | `/home` | `GET /quran/verse-of-the-day`, `/quran/most-liked` |
 | Surah list with filter (name, meaning, number, Meccan/Medinan) | `/quran` | none (metadata ships with the app) |
-| Reader: choice of Arabic script, optional English and transliteration lines, text size | `/quran/:surah?ayah=` | `GET /quran/<type>/<surah>` |
+| Reader: choice of Arabic script, optional English and transliteration lines, text size | `/quran/:surah?ayah=` | `GET /quran/get_surah` |
 | Reflections: sort, topics, by verse, by tag, infinite scroll | `/reflections?surah=&ayah=&tag=` | `GET /reflection/list`, `/by_surah_ayah`, `/by_surah`, `/search?tag=`, `/tags` |
 | One reflection with comments | `/reflections/:id` | `GET /reflection/<id>`, `/<id>/comments` |
 | Author page with stats | `/users/:id` | `GET /user/<id>/reflections` |
@@ -43,7 +43,7 @@ The choice is saved on the device and applied before first paint, so there is no
 | Screen | Route | API |
 |---|---|---|
 | Log in, with the two-step code when it's on | `/login` | `POST /user/login`, `/user/login/2fa` |
-| Sign up (checks username and email as you type) | `/signup` | `POST /user/create_user`, `GET /user/check-username`, `/check-email` |
+| Sign up (checks username, email and phone as you go) | `/signup` | `POST /user/create_user`, `GET /user/check-username`, `/check-email`, `/check-phone` |
 | Verify email, resend the code | `/verify-email?token=` | `POST /user/verify-email`, `/resend-verification` |
 | Forgot / reset password | `/forgot-password`, `/reset-password?token=` | `POST /user/request-password-reset`, `/reset-password` |
 | Account: profile, picture, password, two-step (QR code + recovery codes), log out everywhere, download data, delete forever | `/account` | `GET /user/me`, `PUT /user/<id>`, `PUT·DELETE /user/<id>/picture`, `POST /user/change-password`, `/2fa/*`, `/logout-all`, `GET /user/export`, `POST /user/delete-permanently` |
@@ -76,18 +76,20 @@ The Arabic is always shown. Readers pick its script (Uthmani, Uthmani minimal, S
 Simple plain, Simple clean) and turn the English translation and the transliteration on or off, in the
 reader's toolbar or in Settings. The choices are saved on the device.
 
-### Fields to check against the backend
+### Matching the backend
 
-These request bodies follow the docs, but the exact field names weren't visible, so each lives in one place:
+Requests follow the backend's Insomnia export (`scripts/export_insomnia.py`). Worth knowing:
 
-| What | Sent as | Where to change |
-|---|---|---|
-| Sign-up | `username, email, password, first_name, last_name` (+ `country_code, phone` when given) | `signUpBody()` in `core/api/account-api.ts` |
-| Profile edit | only the fields `/user/me` returns among `first_name, last_name, bio, country_code, phone` | `EDITABLE_PROFILE_FIELDS` in the same file |
-| Resend verification | `{ email }` | `resendVerification()` in the same file |
-| Profile picture upload | multipart field `file` | `uploadPicture()` in the same file |
+- Whole surahs come from `GET /quran/get_surah?quran_type=&surah_id=&page=&size=100`, several pages in
+  parallel for long surahs (the path form `/quran/<type>/<surah>` only returns the first 10 ayahs). Each item's
+  text is `quran_text.text`.
+- Sign-up sends `country_code` (required) and `phone_number` (optional, without the code), plus optional
+  `country`, `gender` and `date_of_birth`. The account page edits `first_name`, `last_name`, `country`,
+  `country_code` and `phone_number`.
+- Roles come from `privilege` on `/user/me`. Resending the verification email needs a login and has no body.
+- Follows are listed per kind (`GET /user/follows?kind=user|ayah|reflection`).
 
-If one is wrong, the backend's 400 `details` are shown next to the form, which names the field to fix.
+If the backend changes a field, its 400 `details` appear next to the form and name the field.
 
 ## Error reporting (Sentry)
 

@@ -25,9 +25,9 @@ import { ThemeToggle } from '../../shared/theme-toggle';
 const FIELD_LABELS: Record<string, string> = {
   first_name: 'First name',
   last_name: 'Last name',
-  bio: 'About you',
-  country_code: 'Country code',
-  phone: 'Phone',
+  country: 'Country',
+  country_code: 'Country calling code',
+  phone_number: 'Phone (without the country code)',
 };
 
 const MAX_PICTURE_BYTES = 5 * 1024 * 1024;

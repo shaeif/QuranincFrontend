@@ -44,9 +44,9 @@ export class ReflectionApi {
     return this.page('/reflection/by_surah', { surah_id: surah }, q);
   }
 
-  /** GET /reflection/search?tag= (case-insensitive). Sorted by the server. */
+  /** GET /reflection/search?tag= (any case). */
   byTag(tag: string, q: PageQuery = {}): Observable<Page<Reflection>> {
-    return this.page('/reflection/search', { tag }, { ...q, sort: undefined });
+    return this.page('/reflection/search', { tag }, q);
   }
 
   /** GET /reflection/<id> */

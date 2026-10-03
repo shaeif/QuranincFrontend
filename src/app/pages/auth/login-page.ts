@@ -99,7 +99,7 @@ export class LoginPage {
       error: (err: unknown) => {
         const e = toApiError(err);
         // An expired or used challenge means starting again with the password.
-        if (e.status === 400 && /challenge/i.test(e.message)) {
+        if ((e.status === 400 || e.status === 401) && /challenge/i.test(e.message)) {
           this.step.set('password');
           this.password.set('');
         }

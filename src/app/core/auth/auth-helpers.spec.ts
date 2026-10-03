@@ -43,6 +43,8 @@ describe('toUser', () => {
     expect(u.displayName).toBe('Amina');
     expect(u.pictureUrl).toMatch(/^https?:\/\/.+\/user\/u1\/picture\?v=2$/);
     expect(toUser({ id: 'u2', username: 'x', is_admin: true }).role).toBe('admin');
+    expect(toUser({ id: 'u4', username: 'z', privilege: 'admin' }).role).toBe('admin');
+    expect(toUser({ id: 'u5', username: 'w', privilege: 'user' }).role).toBe('user');
     expect(toUser({ user: { id: 'u3', username: 'y' } }).username).toBe('y');
   });
 });

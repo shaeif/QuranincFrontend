@@ -98,56 +98,6 @@ ion-split-pane {
   gap: 10px;
 }
 
-.theme-switch {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 4px;
-  border-radius: 14px;
-  background: var(--tb-field);
-  border: 1px solid var(--tb-line);
-
-  button {
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    display: grid;
-    justify-items: center;
-    gap: 2px;
-    padding: 8px 4px;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--tb-muted);
-    cursor: pointer;
-
-    ion-icon {
-      font-size: 17px;
-    }
-
-    &.on {
-      background: var(--tb-glass-strong);
-      color: var(--tb-gold);
-      box-shadow: var(--tb-glass-shadow);
-    }
-  }
-}
-
-.verse {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
-  display: grid;
-  gap: 2px;
-
-  .tb-quran {
-    font-size: 19px;
-    color: var(--tb-gold);
-    line-height: 1.8;
-    text-shadow: var(--tb-text-glow);
-  }
-}
-
 .rail-group {
   display: grid;
   gap: 8px;

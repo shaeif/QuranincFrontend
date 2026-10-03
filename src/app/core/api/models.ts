@@ -135,7 +135,7 @@ export interface FollowEntry {
   kind: FollowKind;
   target: string;
   label: string;
-  at?: number;
+  unavailable?: boolean;
 }
 
 export interface FeedItem {

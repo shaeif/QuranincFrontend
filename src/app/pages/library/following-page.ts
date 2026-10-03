@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import {
   IonBackButton,
@@ -14,7 +15,7 @@ import {
 } from '@ionic/angular';
 import { errorMessage } from '../../core/api/api-client';
 import { LibraryApi } from '../../core/api/library-api';
-import { FollowEntry, UserSummary } from '../../core/api/models';
+import { FollowEntry, LikedVerse, UserSummary } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { LibraryService } from '../../core/auth/library.service';
 import { verseRef } from '../../core/quran/surahs';
@@ -88,34 +89,67 @@ type Tab = 'user' | 'ayah' | 'reflection' | 'followers';
               @case ('error') { <app-state-view state="error" [message]="followers.error()" (retry)="load()" /> }
               @default { <app-state-view state="loading" /> }
             }
-          } @else {
-            @switch (follows.status()) {
+          } @else if (tab() === 'user') {
+            @switch (users.status()) {
               @case ('ready') {
                 <ul class="list">
-                  @for (f of visible(); track f.kind + f.target) {
+                  @for (u of users.data()!; track u.id) {
                     <li class="row tb-tile">
-                      @switch (f.kind) {
-                        @case ('user') {
-                          <app-avatar [name]="f.label" />
-                          <a class="label" [routerLink]="['/users', f.target]">{{ '@' + f.label }}</a>
-                        }
-                        @case ('ayah') {
-                          <span class="icon"><ion-icon name="book-outline" /></span>
-                          <a class="label" [routerLink]="['/quran', f.target.split(':')[0]]" [queryParams]="{ ayah: f.target.split(':')[1] }">{{ ayahLabel(f.target) }}</a>
-                        }
-                        @default {
-                          <span class="icon"><ion-icon name="chatbubbles-outline" /></span>
-                          <a class="label" [routerLink]="['/reflections', f.target]">{{ f.label }}</a>
-                        }
-                      }
-                      <ion-button size="small" fill="outline" (click)="unfollow(f)">Unfollow</ion-button>
+                      <app-avatar [name]="u.username" [src]="u.pictureUrl" />
+                      <a class="label" [routerLink]="['/users', u.id]">{{ '@' + u.username }}</a>
+                      <ion-button size="small" fill="outline" (click)="unfollowUser(u)">Unfollow</ion-button>
                     </li>
                   } @empty {
-                    <app-state-view state="empty" [message]="emptyMessage()" />
+                    <app-state-view state="empty" message="You don't follow anyone yet. Follow people from their profile page." />
                   }
                 </ul>
               }
-              @case ('error') { <app-state-view state="error" [message]="follows.error()" (retry)="load()" /> }
+              @case ('error') { <app-state-view state="error" [message]="users.error()" (retry)="load()" /> }
+              @default { <app-state-view state="loading" /> }
+            }
+          } @else if (tab() === 'ayah') {
+            @switch (ayahs.status()) {
+              @case ('ready') {
+                <ul class="list">
+                  @for (v of ayahs.data()!; track v.surah + ':' + v.ayah) {
+                    <li class="row tb-tile">
+                      <span class="icon"><ion-icon name="book-outline" /></span>
+                      <a class="label" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
+                        {{ ayahLabel(v.surah, v.ayah) }}
+                        @if (v.translation) {
+                          <small class="tb-muted">{{ v.translation }}</small>
+                        }
+                      </a>
+                      <ion-button size="small" fill="outline" (click)="unfollowAyah(v)">Unfollow</ion-button>
+                    </li>
+                  } @empty {
+                    <app-state-view state="empty" message="Follow a verse in the reader to see new reflections on it in your feed." />
+                  }
+                </ul>
+              }
+              @case ('error') { <app-state-view state="error" [message]="ayahs.error()" (retry)="load()" /> }
+              @default { <app-state-view state="loading" /> }
+            }
+          } @else {
+            @switch (reflections.status()) {
+              @case ('ready') {
+                <ul class="list">
+                  @for (f of reflections.data()!; track f.target) {
+                    <li class="row tb-tile">
+                      <span class="icon"><ion-icon name="chatbubbles-outline" /></span>
+                      @if (f.unavailable) {
+                        <span class="label tb-muted">{{ f.label }}</span>
+                      } @else {
+                        <a class="label" [routerLink]="['/reflections', f.target]">{{ f.label }}</a>
+                      }
+                      <ion-button size="small" fill="outline" (click)="unfollowReflection(f)">Unfollow</ion-button>
+                    </li>
+                  } @empty {
+                    <app-state-view state="empty" message="Follow a reflection to see it in your feed when it gets new likes or comments." />
+                  }
+                </ul>
+              }
+              @case ('error') { <app-state-view state="error" [message]="reflections.error()" (retry)="load()" /> }
               @default { <app-state-view state="loading" /> }
             }
           }
@@ -127,6 +161,7 @@ type Tab = 'user' | 'ayah' | 'reflection' | 'followers';
     .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
     .label { flex: 1; min-width: 0; color: var(--tb-fg); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .label small { display: block; font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
     .icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--tb-chip-bg); color: var(--tb-gold); flex: none; }
   `,
 })
@@ -137,19 +172,10 @@ export class FollowingPage {
   private readonly notify = inject(NotifyService);
 
   protected readonly tab = signal<Tab>('user');
-  protected readonly follows = new Loadable<FollowEntry[]>();
+  protected readonly users = new Loadable<UserSummary[]>();
+  protected readonly ayahs = new Loadable<LikedVerse[]>();
+  protected readonly reflections = new Loadable<FollowEntry[]>();
   protected readonly followers = new Loadable<UserSummary[]>();
-  protected readonly visible = computed(() => (this.follows.data() ?? []).filter((f) => f.kind === this.tab()));
-  protected readonly emptyMessage = computed(() => {
-    switch (this.tab()) {
-      case 'user':
-        return "You don't follow anyone yet. Follow people from their profile page.";
-      case 'ayah':
-        return 'Follow a verse in the reader to see new reflections on it in your feed.';
-      default:
-        return 'Follow a reflection to hear about new comments on it.';
-    }
-  });
 
   constructor() {
     effect(() => {
@@ -162,7 +188,9 @@ export class FollowingPage {
   }
 
   protected load(): void {
-    this.follows.load(this.api.follows());
+    this.users.load(this.api.followedUsers());
+    this.ayahs.load(this.api.followedAyahs());
+    this.reflections.load(this.api.followedReflections());
     this.followers.load(this.api.followers());
   }
 
@@ -170,23 +198,29 @@ export class FollowingPage {
     if (value === 'user' || value === 'ayah' || value === 'reflection' || value === 'followers') this.tab.set(value);
   }
 
-  protected ayahLabel(target: string): string {
-    const [s, a] = target.split(':').map(Number);
-    return verseRef(s, a);
+  protected ayahLabel(surah: number, ayah: number): string {
+    return verseRef(surah, ayah);
   }
 
-  protected unfollow(f: FollowEntry): void {
-    const before = this.follows.data() ?? [];
-    this.follows.data.set(before.filter((x) => x !== f));
-    const request =
-      f.kind === 'user'
-        ? this.library.followUser(f.target, false)
-        : f.kind === 'ayah'
-          ? this.library.followAyah(Number(f.target.split(':')[0]), Number(f.target.split(':')[1]), false)
-          : this.api.follow('reflection', f.target, false);
+  protected unfollowUser(u: UserSummary): void {
+    this.remove(this.users, (x) => x !== u, this.library.followUser(u.id, false));
+  }
+
+  protected unfollowAyah(v: LikedVerse): void {
+    this.remove(this.ayahs, (x) => x !== v, this.library.followAyah(v.surah, v.ayah, false));
+  }
+
+  protected unfollowReflection(f: FollowEntry): void {
+    this.remove(this.reflections, (x) => x !== f, this.api.follow('reflection', f.target, false));
+  }
+
+  /** Takes the row out straight away and puts the list back if the request fails. */
+  private remove<T>(list: Loadable<T[]>, keep: (item: T) => boolean, request: Observable<unknown>): void {
+    const before = list.data() ?? [];
+    list.data.set(before.filter(keep));
     request.subscribe({
       error: (err: unknown) => {
-        this.follows.data.set(before);
+        list.data.set(before);
         this.notify.show(errorMessage(err));
       },
     });

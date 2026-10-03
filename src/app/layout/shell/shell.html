@@ -62,24 +62,6 @@
               <a routerLink="/signup" class="rail-signup">Create an account</a>
             </div>
           }
-          <p class="tb-eyebrow">Theme</p>
-          <div class="theme-switch" role="radiogroup" aria-label="Theme">
-            @for (t of themes; track t.value) {
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="theme.preference() === t.value"
-                [class.on]="theme.preference() === t.value"
-                (click)="theme.setPreference(t.value)"
-              >
-                <ion-icon [name]="t.icon" aria-hidden="true" />{{ t.label }}
-              </button>
-            }
-          </div>
-          <p class="verse tb-muted">
-            <span class="tb-quran" lang="ar">أَفَلَا يَتَدَبَّرُونَ ٱلْقُرْءَانَ</span>
-            “Do they not reflect upon the Quran?” 4:82
-          </p>
         </div>
       </nav>
     </ion-content>

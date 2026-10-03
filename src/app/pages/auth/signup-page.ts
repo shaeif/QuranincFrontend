@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   IonBackButton,
+  IonSelect,
+  IonSelectOption,
   IonButton,
   IonButtons,
   IonContent,
@@ -28,7 +30,10 @@ const SERVER_FIELDS: Record<string, Field> = {
   first_name: 'firstName',
   last_name: 'lastName',
   country_code: 'countryCode',
-  phone: 'phone',
+  phone_number: 'phone',
+  country: 'country',
+  gender: 'gender',
+  date_of_birth: 'dateOfBirth',
 };
 
 @Component({
@@ -36,6 +41,8 @@ const SERVER_FIELDS: Record<string, Field> = {
   imports: [
     RouterLink,
     IonBackButton,
+    IonSelect,
+    IonSelectOption,
     IonButton,
     IonButtons,
     IonContent,
@@ -62,8 +69,11 @@ export class SignupPage {
     confirm: '',
     firstName: '',
     lastName: '',
-    countryCode: '+',
+    countryCode: '',
     phone: '',
+    country: '',
+    gender: '',
+    dateOfBirth: '',
   });
   protected readonly errors = signal<Partial<Record<Field, string>>>({});
   protected readonly general = signal('');
@@ -71,6 +81,8 @@ export class SignupPage {
   protected readonly done = signal(false);
   protected readonly usernameTaken = signal(false);
   protected readonly emailTaken = signal(false);
+  protected readonly phoneTaken = signal(false);
+  protected readonly today = new Date().toISOString().slice(0, 10);
 
   protected readonly passwordHint = computed(() => {
     const f = this.form();
@@ -78,7 +90,7 @@ export class SignupPage {
   });
 
   protected set(field: Field, event: Event): void {
-    const value = inputValue(event);
+    const value = field === 'gender' ? String((event as CustomEvent<{ value?: unknown }>).detail?.value ?? '') : inputValue(event);
     this.form.update((f) => ({ ...f, [field]: value }));
     if (this.errors()[field]) this.errors.update((e) => ({ ...e, [field]: undefined }));
   }
@@ -95,6 +107,15 @@ export class SignupPage {
     this.api.checkEmail(e).subscribe({ next: (taken) => this.emailTaken.set(taken), error: () => undefined });
   }
 
+  protected checkPhone(): void {
+    const f = this.form();
+    if (f.phone.trim().length < 5) return;
+    this.api.checkPhone(f.phone.trim(), f.countryCode.trim() || undefined).subscribe({
+      next: (taken) => this.phoneTaken.set(taken),
+      error: () => undefined,
+    });
+  }
+
   protected submit(event?: Event): void {
     event?.preventDefault();
     if (this.busy()) return;
@@ -105,6 +126,9 @@ export class SignupPage {
     if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) errors.email = 'Enter a valid email address.';
     else if (this.emailTaken()) errors.email = 'An account already uses this email.';
     if (!f.firstName.trim()) errors.firstName = 'Enter your first name.';
+    if (!/^\s*\+?\d{1,4}\s*$/.test(f.countryCode)) errors.countryCode = 'Enter your country calling code, like +91 or +44.';
+    if (f.phone.trim() && !/^[\d\s-]{4,20}$/.test(f.phone.trim())) errors.phone = 'Enter the number without the country code, digits only.';
+    else if (this.phoneTaken()) errors.phone = 'An account already uses this phone number.';
     const pw = passwordProblem(f.password, f.username, f.email);
     if (pw) errors.password = pw;
     if (f.confirm !== f.password) errors.confirm = "The passwords don't match.";

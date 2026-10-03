@@ -30,14 +30,13 @@ export class LibraryService {
     forkJoin({
       liked: this.api.likedAyahs().pipe(catchError(() => of(null))),
       bookmarked: this.api.bookmarkedAyahs().pipe(catchError(() => of(null))),
-      follows: this.api.follows().pipe(catchError(() => of(null))),
-    }).subscribe(({ liked, bookmarked, follows }) => {
+      ayahs: this.api.followedAyahs().pipe(catchError(() => of(null))),
+      users: this.api.followedUsers().pipe(catchError(() => of(null))),
+    }).subscribe(({ liked, bookmarked, ayahs, users }) => {
       if (liked) this.likedAyahs.set(new Set(liked.items.map((v) => key(v.surah, v.ayah))));
       if (bookmarked) this.bookmarkedAyahs.set(new Set(bookmarked.items.map((v) => key(v.surah, v.ayah))));
-      if (follows) {
-        this.followedAyahs.set(new Set(follows.filter((f) => f.kind === 'ayah').map((f) => f.target)));
-        this.followedUsers.set(new Set(follows.filter((f) => f.kind === 'user').map((f) => f.target)));
-      }
+      if (ayahs) this.followedAyahs.set(new Set(ayahs.map((v) => key(v.surah, v.ayah))));
+      if (users) this.followedUsers.set(new Set(users.map((u) => u.id)));
     });
   }
 

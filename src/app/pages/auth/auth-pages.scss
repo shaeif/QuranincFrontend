@@ -12,11 +12,16 @@
 
 .phone {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 128px 1fr;
   gap: 10px;
 }
 
 .big-icon {
   font-size: 40px;
   color: var(--tb-gold);
+}
+
+ion-select {
+  --background: var(--tb-field);
+  --border-radius: 14px;
 }

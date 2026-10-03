@@ -4,7 +4,6 @@ import {
   AuthorPage,
   FeedItem,
   FollowEntry,
-  FollowKind,
   LikedVerse,
   Page,
   ReadingHistoryEntry,
@@ -110,8 +109,13 @@ export function safeHighlight(value: unknown): string | undefined {
     .replace(/&lt;(\/?)em&gt;/g, '<$1em>');
 }
 
-function pickHighlight(h: unknown, keys: string[]): string | undefined {
-  if (typeof h === 'string' || Array.isArray(h)) return keys.includes('*') ? safeHighlight(h) : undefined;
+const ARABIC_LETTERS = /[\u0600-\u06FF]/;
+
+function pickHighlight(h: unknown, keys: string[], lang: 'ar' | 'en'): string | undefined {
+  if (typeof h === 'string' || Array.isArray(h)) {
+    const text = Array.isArray(h) ? h.join(' ') : h;
+    return ARABIC_LETTERS.test(text) === (lang === 'ar') ? safeHighlight(h) : undefined;
+  }
   if (!isObject(h)) return undefined;
   for (const key of Object.keys(h)) {
     if (keys.some((k) => key === k || key.startsWith(`${k}.`))) return safeHighlight(h[key]);
@@ -137,8 +141,8 @@ export function toSearchVerse(raw: unknown): SearchVerse {
   const h = v['highlight'];
   return {
     ...toVerse(v),
-    highlightAr: pickHighlight(h, ['text_ar', 'arabic', '*']),
-    highlightEn: pickHighlight(h, ['translation', 'text_en', 'english']),
+    highlightAr: pickHighlight(h, ['text_ar', 'arabic', 'text_uthmani'], 'ar'),
+    highlightEn: pickHighlight(h, ['translation', 'text_en', 'english'], 'en'),
   };
 }
 
@@ -148,26 +152,45 @@ export function toLikedVerse(raw: unknown): LikedVerse {
 }
 
 /**
- * One text type of a surah (GET /quran/<type>/<surah>) as ayah → text.
- * Accepts a list of docs/hits, or an object keyed by ayah number.
+ * Quran text responses (GET /quran/get_surah, GET /quran/<type>/<surah>/<ayah>) as ayah → text.
+ * Items look like {..., quran_text: {text}}; plain docs, ES hits and objects keyed by ayah work too.
+ * `offset` is the number of ayahs before this page, used when an item doesn't say its ayah number.
  */
-export function toAyahTexts(raw: unknown): Map<number, string> {
+export function toAyahTexts(raw: unknown, offset = 0): Map<number, string> {
   const out = new Map<number, string>();
   const list = extractArray(raw);
   if (list.length) {
     list.forEach((item, i) => {
       if (typeof item === 'string') {
-        out.set(i + 1, item);
+        out.set(offset + i + 1, item);
         return;
       }
       const v = flatten(item);
-      const verse = toVerse(v);
-      const text = str(v['text'], v['text_ar'], v['translation'], v['content'], v['aya_text']);
-      if (text) out.set(verse.ayah || i + 1, text);
+      const qt = v['quran_text'];
+      const inner = isObject(qt) ? qt : {};
+      const text = str(
+        typeof qt === 'string' ? qt : undefined,
+        inner['text'],
+        inner['text_ar'],
+        v['text'],
+        v['text_ar'],
+        v['translation'],
+        v['content'],
+        v['aya_text'],
+      );
+      const ayah =
+        num(v['ayah_id'], v['ayah'], v['aya'], v['aya_id'], v['verse'], inner['ayah_id'], inner['ayah'], inner['aya'], inner['aya_id']) ??
+        (toVerse(v).ayah || offset + i + 1);
+      if (text) out.set(ayah, text);
     });
     return out;
   }
   if (isObject(raw)) {
+    const qt = raw['quran_text'];
+    if (isObject(qt) && typeof qt['text'] === 'string') {
+      out.set(num(raw['ayah_id'], raw['ayah'], qt['ayah_id'], qt['aya']) ?? offset + 1, qt['text']);
+      return out;
+    }
     for (const [k, value] of Object.entries(raw)) {
       const n = Number(k.includes(':') ? k.split(':')[1] : k);
       const text = typeof value === 'string' ? value : str(flatten(value)['text']);
@@ -239,7 +262,7 @@ export function pictureUrl(value: unknown): string | undefined {
 }
 
 function toRole(u: Json): Role {
-  const role = str(u['role'])?.toLowerCase();
+  const role = str(u['privilege'], u['role'])?.toLowerCase();
   if (role === 'admin' || u['is_admin'] === true) return 'admin';
   if (role === 'moderator' || u['is_moderator'] === true) return 'moderator';
   return 'user';
@@ -364,18 +387,17 @@ export function toReportGroup(raw: unknown): ReportGroup {
   };
 }
 
-export function toFollow(raw: unknown): FollowEntry {
-  const f = flatten(raw);
-  const kind = (str(f['kind']) ?? 'user') as FollowKind;
-  const target = str(f['target'], f['target_id'], f['id']) ?? '';
-  const user = isObject(f['user']) ? f['user'] : undefined;
-  const label =
-    kind === 'user'
-      ? (str(user?.['username'], f['username'], f['label']) ?? target)
-      : kind === 'ayah'
-        ? target
-        : (str(f['label'], f['excerpt']) ?? 'A reflection');
-  return { kind, target, label, at: time(f['followed_at_ms'], f['created_at']) };
+/** A followed reflection: hidden or deleted ones come as {id, unavailable: true}. */
+export function toFollowedReflection(raw: unknown): FollowEntry {
+  const r = flatten(raw);
+  const reflection = toReflection(r);
+  const unavailable = r['unavailable'] === true;
+  return {
+    kind: 'reflection',
+    target: reflection.id,
+    label: unavailable ? 'No longer available' : reflection.text.slice(0, 90) || 'A reflection',
+    unavailable,
+  };
 }
 
 export function toFeedItem(raw: unknown): FeedItem {

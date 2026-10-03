@@ -18,7 +18,7 @@ import {
   extractArray,
   field,
   toFeedItem,
-  toFollow,
+  toFollowedReflection,
   toHistoryEntry,
   toLikedVerse,
   toNotification,
@@ -84,8 +84,21 @@ export class LibraryApi {
     return on ? this.api.put(path) : this.api.delete(path);
   }
 
-  follows(): Observable<FollowEntry[]> {
-    return this.api.get('/user/follows').pipe(map((r) => extractArray(r).map(toFollow)));
+  /** GET /user/follows?kind=user: public profiles of the people you follow. */
+  followedUsers(): Observable<UserSummary[]> {
+    return this.api.get('/user/follows', { kind: 'user' }).pipe(map((r) => extractArray(r).map(toUserSummary)));
+  }
+
+  /** GET /user/follows?kind=ayah: with Arabic and translation. */
+  followedAyahs(): Observable<LikedVerse[]> {
+    return this.api.get('/user/follows', { kind: 'ayah' }).pipe(map((r) => extractArray(r).map(toLikedVerse)));
+  }
+
+  /** GET /user/follows?kind=reflection: hidden or deleted ones are marked unavailable. */
+  followedReflections(): Observable<FollowEntry[]> {
+    return this.api
+      .get('/user/follows', { kind: 'reflection' })
+      .pipe(map((r) => extractArray(r).map(toFollowedReflection)));
   }
 
   followers(): Observable<UserSummary[]> {
@@ -119,6 +132,7 @@ export class LibraryApi {
 
   /* ---------- Notifications ---------- */
 
+  /** GET /user/notifications: newest first, kept 90 days. */
   notifications(): Observable<Page<AppNotification> & { unread: number }> {
     return this.api.get('/user/notifications').pipe(
       map((r) => ({ ...toPage(r, toNotification), unread: Number(field(r, 'unread')) || 0 })),
