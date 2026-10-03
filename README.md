@@ -93,11 +93,11 @@ If one is wrong, the backend's 400 `details` are shown next to the form, which n
 
 Uncaught errors and API server errors (5xx) go to [Sentry](https://sentry.io) once a DSN is set:
 
-1. In Sentry, create a project for the **Angular** platform and copy its DSN (Settings → Client Keys).
-2. Put it in `sentryDsn` in `src/environments/environment.prod.ts` (and `environment.ts` to report from dev).
-   Empty means Sentry is off.
-3. Optionally set `sentryTracesSampleRate` (share of page loads and navigations sent as performance traces)
-   and `release`.
+- The DSN is set in both environment files. Events are tagged `development` (from `npm start`) or
+  `production` (from `npm run build`), so you can filter them in Sentry. Set `sentryDsn` to `''` to turn reporting off.
+- `sentryTracesSampleRate` is the share of page loads and navigations sent as performance traces
+  (0.2 in dev, 0.1 in production). Bump `release` when you deploy so errors are grouped by version.
+- A DSN is a public client key; it is safe in browser code.
 
 What is sent: the error, stack trace, page path, and the signed-in user's **id** only. What isn't: no IP
 address, cookies, headers, request bodies, emails or usernames. `token`, `code`, `challenge` and password values
