@@ -60,8 +60,8 @@ npm run build      # production build in dist/tadabbur/browser, talks to the pro
 | `npm start`, `npm run build:dev` | [`src/environments/environment.ts`](src/environments/environment.ts) | `http://192.168.10.94:8000` (dev stack) |
 | `npm run build` | [`src/environments/environment.prod.ts`](src/environments/environment.prod.ts) | `http://192.168.10.94:5000` (production) |
 
-The same files set which text types the reader asks for (`quranTextType: 'uthmani'`,
-`translationType: 'translation-sahih'`, i.e. `GET /quran/uthmani/94`). Change them there if the backend
+The same files set which text types the reader asks for (`quranTextType: 'quran-uthmani'`,
+`translationType: 'quran-translation-sahih'`, i.e. `GET /quran/quran-uthmani/94`). Change them there if the backend
 names its types differently.
 
 The backend's CORS settings must allow the origin the app is served from (for example `http://localhost:8100`).

@@ -6,8 +6,10 @@ export const environment = {
   production: false,
   /** Quran Reflections API, dev stack. */
   apiUrl: 'http://192.168.10.94:8000',
-  /** Text type used for Arabic in the reader: GET /quran/<type>/<surah>. */
-  quranTextType: 'uthmani',
+  /** Text type for Arabic in the reader: GET /quran/<type>/<surah>. Backend types: quran-simple, quran-uthmani,
+   *  quran-uthmani-min, quran-simple-min, quran-simple-plain, quran-simple-clean, quran-transliteration,
+   *  quran-translation-sahih. */
+  quranTextType: 'quran-uthmani',
   /** Text type used for the English translation (Sahih International). */
-  translationType: 'translation-sahih',
+  translationType: 'quran-translation-sahih',
 };
