@@ -157,6 +157,11 @@ export class ReflectionDetailPage {
     this.notify.share(`Reflection on ${verseRef(r.surah, r.ayah)}`, `${r.text.slice(0, 200)}${r.text.length > 200 ? '…' : ''}\n\n${url}`);
   }
 
+  protected sendInMessage(): void {
+    const next = `/messages/new?reflection=${encodeURIComponent(this.id())}`;
+    if (this.auth.requireLogin(next)) this.router.navigateByUrl(next);
+  }
+
   /* ---------- Comments ---------- */
 
   protected addComment(event?: Event): void {

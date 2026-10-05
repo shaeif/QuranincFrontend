@@ -13,13 +13,17 @@
   </ion-refresher>
 
   <div class="tb-container">
-    <!-- Hero -->
-    <section class="hero tb-pattern">
-      <p class="tb-eyebrow">{{ greeting }} · Assalamu alaikum{{ firstName() ? ', ' + firstName() : '' }}</p>
-      <h1 class="tb-display">Reflect on every verse</h1>
-      <p class="lede">
-        Read the Quran in Arabic with English, search its meanings, and see what people around the world reflect on.
-      </p>
+    <!-- Hero: compact for signed-in people, a welcome for visitors -->
+    <section class="hero tb-pattern" [class.compact]="auth.isLoggedIn()">
+      <p class="tb-eyebrow">{{ greeting }}</p>
+      @if (auth.isLoggedIn()) {
+        <h1 class="tb-display">Assalamu alaikum{{ firstName() ? ', ' + firstName() : '' }}</h1>
+      } @else {
+        <h1 class="tb-display">Reflect on every verse</h1>
+        <p class="lede">
+          Read the Quran in Arabic with English, search its meanings, and see what people around the world reflect on.
+        </p>
+      }
       <p class="dates tb-muted">
         <ion-icon name="time-outline" aria-hidden="true" />{{ today }}@if (hijri) {<span> · {{ hijri }}</span>}
       </p>
@@ -28,6 +32,32 @@
         <span>Search the Quran: <span lang="ar">الصبر</span>, mercy, “light upon light”</span>
       </a>
     </section>
+
+    <!-- Your day (signed in) -->
+    @if (auth.user()) {
+      <nav class="today" aria-label="Your day">
+        <a class="today-tile tb-tile" routerLink="/reading">
+          <span class="ti" [class.lit]="reading()?.streak?.readToday"><ion-icon [name]="reading()?.streak?.readToday ? 'flame' : 'flame-outline'" /></span>
+          <span><b>{{ reading()?.streak?.current ?? 0 }}-day streak</b><small>{{ reading()?.streak?.readToday ? 'Read today' : 'Read an ayah today' }}</small></span>
+        </a>
+        @if (resume(); as r) {
+          <a class="today-tile tb-tile" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
+            <span class="ti"><ion-icon name="book-outline" /></span>
+            <span><b>Continue</b><small>{{ r.name }} · {{ r.ayah }}</small></span>
+          </a>
+        }
+        <a class="today-tile tb-tile" routerLink="/messages">
+          <span class="ti"><ion-icon name="mail-outline" /></span>
+          <span><b>Messages</b><small>{{ chats.badge() ? chats.badge() + ' new' : 'All caught up' }}</small></span>
+          @if (chats.badge()) { <span class="dot" aria-hidden="true"></span> }
+        </a>
+        <a class="today-tile tb-tile" routerLink="/notifications">
+          <span class="ti"><ion-icon name="notifications-outline" /></span>
+          <span><b>Activity</b><small>{{ notes.unread() ? notes.unread() + ' unread' : 'Nothing new' }}</small></span>
+          @if (notes.unread()) { <span class="dot" aria-hidden="true"></span> }
+        </a>
+      </nav>
+    }
 
     <!-- Verse of the day -->
     <section class="tb-section" aria-labelledby="votd-title">
@@ -65,7 +95,8 @@
       }
     </section>
 
-    <!-- Quick actions -->
+    <!-- Quick actions (visitors) -->
+    @if (!auth.isLoggedIn()) {
     <nav class="quick" aria-label="Start here">
       @if (continueSurah(); as s) {
         <a class="quick-tile tb-tile tb-hover continue" [routerLink]="['/quran', s.number]" [queryParams]="{ ayah: lastRead.position()!.ayah }">
@@ -86,8 +117,10 @@
         <span><b>Reflections</b><small>From the community</small></span>
       </a>
     </nav>
+    }
 
     <!-- For curious visitors -->
+    @if (!auth.isLoggedIn()) {
     <section class="curious tb-glass" aria-labelledby="curious-title">
       <div class="curious-text">
         <p class="tb-eyebrow">New to the Quran?</p>
@@ -104,6 +137,7 @@
         <div><dt>23</dt><dd>years of revelation</dd></div>
       </dl>
     </section>
+    }
 
     <!-- Reflections on today's verse -->
     @if (votd.status() === 'ready') {

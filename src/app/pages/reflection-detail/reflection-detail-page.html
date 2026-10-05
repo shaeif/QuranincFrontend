@@ -28,7 +28,10 @@
               {{ r.followedByMe ? 'Following' : 'Follow' }}
             </ion-button>
           }
-          <ion-button fill="outline" size="small" (click)="share()" aria-label="Share">
+          <ion-button fill="outline" size="small" (click)="sendInMessage()" aria-label="Send in a message" title="Send in a message">
+            <ion-icon slot="icon-only" name="mail-outline" />
+          </ion-button>
+          <ion-button fill="outline" size="small" (click)="share()" aria-label="Share" title="Share">
             <ion-icon slot="icon-only" name="share-social-outline" />
           </ion-button>
           <ion-button fill="clear" size="small" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">

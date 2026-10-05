@@ -17,7 +17,10 @@ import {
 import { AccountApi, EDITABLE_PROFILE_FIELDS, TwoFactorEnrollment } from '../../core/api/account-api';
 import { errorMessage } from '../../core/api/api-client';
 import { AuthService } from '../../core/auth/auth.service';
+import { ChatApi } from '../../core/chat/chat-api';
+import { BlockedUser } from '../../core/chat/chat-models';
 import { inputValue, passwordProblem } from '../../core/util/forms';
+import { Loadable } from '../../core/util/loadable';
 import { Avatar } from '../../shared/avatar';
 import { NotifyService } from '../../shared/notify.service';
 import { ThemeToggle } from '../../shared/theme-toggle';
@@ -59,6 +62,7 @@ export class AccountPage {
   private readonly notify = inject(NotifyService);
   private readonly alerts = inject(AlertController);
   private readonly router = inject(Router);
+  private readonly chats = inject(ChatApi);
   protected readonly inputValue = inputValue;
   protected readonly labels = FIELD_LABELS;
 
@@ -79,6 +83,7 @@ export class AccountPage {
   protected readonly confirmPassword = signal('');
   protected readonly passwordBusy = signal(false);
   protected readonly passwordError = signal('');
+  protected readonly passwordCode = signal('');
 
   /* Two-step */
   protected readonly tfPassword = signal('');
@@ -96,8 +101,15 @@ export class AccountPage {
   protected readonly deleteConfirm = signal('');
   protected readonly deleteBusy = signal(false);
   protected readonly deleteError = signal('');
+  protected readonly deleteCode = signal('');
+
+  /* Blocked people */
+  protected readonly blocked = new Loadable<BlockedUser[]>();
 
   constructor() {
+    effect(() => {
+      if (this.auth.user()?.id) untracked(() => this.loadBlocked());
+    });
     effect(() => {
       const user = this.auth.user();
       if (!user) return;
@@ -193,14 +205,19 @@ export class AccountPage {
         (this.newPassword() !== this.confirmPassword() ? "The new passwords don't match." : '');
     this.passwordError.set(problem);
     if (problem) return;
+    if (user?.twoFactorEnabled && !this.passwordCode().trim()) {
+      this.passwordError.set('Enter the code from your authenticator app (or a recovery code).');
+      return;
+    }
     this.passwordBusy.set(true);
-    this.api.changePassword(this.oldPassword(), this.newPassword()).subscribe({
+    this.api.changePassword(this.oldPassword(), this.newPassword(), this.passwordCode()).subscribe({
       next: (raw) => {
         this.passwordBusy.set(false);
         this.auth.replaceTokens(raw);
         this.oldPassword.set('');
         this.newPassword.set('');
         this.confirmPassword.set('');
+        this.passwordCode.set('');
         this.notify.show('Password changed. Your other devices were signed out.');
       },
       error: (err: unknown) => {
@@ -298,6 +315,24 @@ export class AccountPage {
     this.notify.copy(this.enrollment()?.secret ?? '', 'Key copied');
   }
 
+  /* ---------- Blocked people ---------- */
+
+  protected loadBlocked(): void {
+    this.blocked.load(this.chats.blocked());
+  }
+
+  protected unblock(u: BlockedUser): void {
+    const before = this.blocked.data() ?? [];
+    this.blocked.data.set(before.filter((x) => x.id !== u.id));
+    this.chats.block(u.id, false).subscribe({
+      next: () => this.notify.show(`Unblocked @${u.username}`),
+      error: (err: unknown) => {
+        this.blocked.data.set(before);
+        this.notify.show(errorMessage(err));
+      },
+    });
+  }
+
   /* ---------- Sessions ---------- */
 
   protected async logoutEverywhere(): Promise<void> {
@@ -354,9 +389,13 @@ export class AccountPage {
       this.deleteError.set('Enter your password.');
       return;
     }
+    if (this.auth.user()?.twoFactorEnabled && !this.deleteCode().trim()) {
+      this.deleteError.set('Enter the code from your authenticator app (or a recovery code).');
+      return;
+    }
     this.deleteBusy.set(true);
     this.deleteError.set('');
-    this.api.deletePermanently(this.deletePassword()).subscribe({
+    this.api.deletePermanently(this.deletePassword(), this.deleteCode()).subscribe({
       next: () => {
         this.deleteBusy.set(false);
         this.auth.endSession();

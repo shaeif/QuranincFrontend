@@ -295,6 +295,7 @@ export function toUser(raw: unknown): UserProfile {
     emailVerified: typeof u['email_verified'] === 'boolean' ? u['email_verified'] : undefined,
     pictureUrl: pictureUrl(u['profile_picture'] ?? u['picture']),
     twoFactorEnabled: typeof twoFactor === 'boolean' ? twoFactor : undefined,
+    recoveryCodesLeft: num(u['recovery_codes_left']),
     createdAt: time(u['created_at'], u['created_at_ms']),
     raw: u,
   };

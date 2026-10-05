@@ -77,6 +77,10 @@
           </ion-input>
           <ion-input label="Repeat new password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
             [maxlength]="128" [value]="confirmPassword()" (ionInput)="confirmPassword.set(inputValue($event))" />
+          @if (user.twoFactorEnabled) {
+            <ion-input label="Two-step code" labelPlacement="floating" fill="outline" inputmode="numeric" autocomplete="one-time-code"
+              [maxlength]="32" [value]="passwordCode()" (ionInput)="passwordCode.set(inputValue($event))" />
+          }
           @if (passwordError()) {
             <p class="tb-alert" role="alert"><ion-icon name="alert-circle-outline" />{{ passwordError() }}</p>
           }
@@ -127,6 +131,13 @@
             </form>
           } @else if (user.twoFactorEnabled === true || showDisable()) {
             <p><ion-icon name="shield-checkmark-outline" class="ok" aria-hidden="true" /> Logging in asks for a code from your authenticator app.</p>
+            @if (user.recoveryCodesLeft !== undefined) {
+              <p [class.tb-alert]="user.recoveryCodesLeft <= 3" class="codes-left">
+                @if (user.recoveryCodesLeft <= 3) { <ion-icon name="warning-outline" /> }
+                {{ user.recoveryCodesLeft }} recovery code{{ user.recoveryCodesLeft === 1 ? '' : 's' }} left.
+                @if (user.recoveryCodesLeft <= 3) { Turn two-step off and on again to get 10 new ones. }
+              </p>
+            }
             <form class="tb-form" (submit)="disableTwoFactor($event)" novalidate>
               <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
                 [value]="tfPassword()" (ionInput)="tfPassword.set(inputValue($event))" />
@@ -161,6 +172,27 @@
         </div>
       </section>
 
+      <!-- Blocked people -->
+      <section class="tb-section" aria-labelledby="blocked-title">
+        <div class="tb-section-head"><h2 id="blocked-title">Blocked people</h2></div>
+        <div class="panel tb-tile">
+          <p class="tb-muted">People you block can't message you, and you can't message them. They aren't told.</p>
+          @if (blocked.status() === 'ready') {
+            @for (b of blocked.data()!; track b.id) {
+              <div class="blocked">
+                <app-avatar [name]="b.username" [src]="b.pictureUrl" [size]="32" />
+                <b>{{ '@' + b.username }}</b>
+                <ion-button size="small" fill="outline" (click)="unblock(b)">Unblock</ion-button>
+              </div>
+            } @empty {
+              <p class="tb-muted small">You haven't blocked anyone.</p>
+            }
+          } @else if (blocked.status() === 'error') {
+            <p class="tb-muted small">{{ blocked.error() }}</p>
+          }
+        </div>
+      </section>
+
       <!-- Sessions -->
       <section class="tb-section" aria-labelledby="sessions-title">
         <div class="tb-section-head"><h2 id="sessions-title">Devices</h2></div>
@@ -184,6 +216,10 @@
           <p class="tb-muted">Removes your account, reflections, comments, likes, bookmarks, follows and picture. This can't be undone. Download your data first if you want a copy.</p>
           <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="current-password"
             [value]="deletePassword()" (ionInput)="deletePassword.set(inputValue($event))" />
+          @if (user.twoFactorEnabled) {
+            <ion-input label="Two-step code" labelPlacement="floating" fill="outline" inputmode="numeric" autocomplete="one-time-code"
+              [maxlength]="32" [value]="deleteCode()" (ionInput)="deleteCode.set(inputValue($event))" />
+          }
           <ion-input label="Type DELETE to confirm" labelPlacement="floating" fill="outline" autocapitalize="characters"
             [value]="deleteConfirm()" (ionInput)="deleteConfirm.set(inputValue($event))" />
           @if (deleteError()) {

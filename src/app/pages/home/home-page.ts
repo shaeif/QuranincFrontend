@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   IonButton,
@@ -17,7 +17,11 @@ import { forkJoin } from 'rxjs';
 import { LikedVerse, Page } from '../../core/api/models';
 import { QuranApi, VerseOfTheDay } from '../../core/api/quran-api';
 import { getSurah, SURAHS, TOTAL_AYAHS, verseRef } from '../../core/quran/surahs';
+import { LibraryApi } from '../../core/api/library-api';
+import { ReadingStatus } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
+import { NotificationBadgeService } from '../../core/auth/notification-badge.service';
+import { ChatSyncService } from '../../core/chat/chat-sync.service';
 import { LastReadService } from '../../core/settings/last-read.service';
 import { hijriDate, partOfDay } from '../../core/util/format';
 import { Loadable } from '../../core/util/loadable';
@@ -58,6 +62,16 @@ export class HomePage implements OnInit {
   private readonly notify = inject(NotifyService);
   protected readonly lastRead = inject(LastReadService);
   protected readonly auth = inject(AuthService);
+  protected readonly chats = inject(ChatSyncService);
+  protected readonly notes = inject(NotificationBadgeService);
+  private readonly library = inject(LibraryApi);
+  protected readonly reading = signal<ReadingStatus | null>(null);
+  /** Where to continue: the account's saved place, else this device's. */
+  protected readonly resume = computed(() => {
+    const p = this.reading()?.position ?? this.lastRead.position();
+    const s = p ? getSurah(p.surah) : undefined;
+    return s && p ? { surah: s.number, ayah: p.ayah, name: s.name } : null;
+  });
   protected readonly firstName = computed(() => {
     const u = this.auth.user();
     return u ? u.firstName || u.username : '';
@@ -77,6 +91,16 @@ export class HomePage implements OnInit {
   protected readonly verse = computed(() => this.votd.data()?.verse);
   protected readonly verseSurah = computed(() => getSurah(this.verse()?.surah ?? 0));
   protected readonly continueSurah = computed(() => getSurah(this.lastRead.position()?.surah ?? 0));
+
+  constructor() {
+    effect(() => {
+      if (this.auth.user()) {
+        untracked(() => this.library.reading().subscribe({ next: (r) => this.reading.set(r), error: () => undefined }));
+      } else {
+        this.reading.set(null);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadVerse();

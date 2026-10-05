@@ -7,6 +7,10 @@ import { AuthService } from './auth.service';
 /**
  * Adds the access token to API requests, refreshing it first when it is about
  * to expire, and retries once if the server still says it expired.
+ *
+ * Public reads answer 401 to an expired or invalid token (rather than treating
+ * the caller as anonymous), so a GET whose token can't be renewed is retried
+ * without one: the page still loads, just without "liked by me" and the like.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith(API_BASE) || req.context.get(SKIP_AUTH)) return next(req);
@@ -21,8 +25,19 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         catchError((err: unknown) => {
           if (!token || !(err instanceof HttpErrorResponse) || err.status !== 401) return throwError(() => err);
           const message = String((err.error as { error?: unknown } | null)?.error ?? '');
-          if (/expired/i.test(message)) return auth.refresh().pipe(switchMap((fresh) => send(fresh)));
-          if (/session has ended|deleted or disabled/i.test(message)) auth.endSession('Your session ended. Please log in again.');
+          const anonymousRetry = req.method === 'GET' ? next(req) : throwError(() => err);
+          if (/expired/i.test(message)) {
+            return auth.refresh().pipe(
+              switchMap((fresh) => send(fresh)),
+              catchError((retryErr: unknown) =>
+                retryErr instanceof HttpErrorResponse && retryErr.status !== 401 ? throwError(() => retryErr) : anonymousRetry,
+              ),
+            );
+          }
+          if (/session has ended|deleted or disabled|token|signature|segments/i.test(message)) {
+            auth.endSession('Your session ended. Please log in again.');
+            return anonymousRetry;
+          }
           return throwError(() => err);
         }),
       ),

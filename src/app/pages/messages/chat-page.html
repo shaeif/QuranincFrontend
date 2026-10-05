@@ -1,0 +1,142 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/messages" text="" /></ion-buttons>
+    @if (other(); as o) {
+      <a class="who" [routerLink]="o.id ? ['/users', o.id] : null">
+        <app-avatar [name]="o.username" [src]="o.pictureUrl" [size]="34" />
+        <span>
+          <b>{{ o.username ? '@' + o.username : 'Chat' }}</b>
+          <small class="tb-muted">{{ retentionText() }}</small>
+        </span>
+      </a>
+    }
+    <ion-buttons slot="end">
+      <ion-button (click)="chatMenu()" aria-label="Chat options" title="Chat options">
+        <ion-icon slot="icon-only" name="ellipsis-horizontal" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content chat-content">
+  <div class="thread">
+    @switch (status()) {
+      @case ('ready') {
+        <p class="note">
+          <ion-icon [name]="chat()?.retention === 'keep' ? 'bookmark' : 'time-outline'" aria-hidden="true" />
+          {{ retentionText() }}. Tap a message to save it.
+        </p>
+
+        @for (g of groups(); track g.label) {
+          @if (g.label) {
+            <p class="day">{{ g.label }}</p>
+          }
+          @for (m of g.messages; track m.id) {
+            @if (m.notice) {
+              <p class="notice">{{ m.text }}</p>
+            } @else {
+              <div class="msg" [class.mine]="m.mine">
+                <button type="button" class="bubble" (click)="messageActions(m)" [attr.aria-label]="'Options for message: ' + (m.text || 'attachment')">
+                  @if (m.attachment) {
+                    <app-attachment-card [attachment]="m.attachment" />
+                  }
+                  @if (m.text) {
+                    <span class="text">{{ m.text }}</span>
+                  }
+                </button>
+                <span class="meta">
+                  @if (m.saved) {
+                    <ion-icon name="bookmark" class="saved" aria-label="Saved" />
+                  }
+                  {{ time(m.createdAt) }}
+                  @if (m.mine && m.id === lastSeenMine()) {
+                    · Seen
+                  }
+                  @if (expiry(m); as e) {
+                    · {{ e }}
+                  }
+                </span>
+              </div>
+            }
+          }
+        } @empty {
+          <app-state-view state="empty" message="Say salam. Share an ayah or a thought." />
+        }
+      }
+      @case ('error') {
+        <app-state-view state="error" [message]="error()" (retry)="retry()" />
+      }
+      @default {
+        <app-state-view state="loading" [rows]="3" />
+      }
+    }
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border composer-footer">
+  @if (chat()?.state === 'request_in') {
+    <div class="request tb-glass">
+      <p><b>{{ other()?.username ? '@' + other()!.username : 'Someone' }}</b> wants to message you. They won’t know you’ve seen this until you accept or reply.</p>
+      <div class="row">
+        <ion-button size="small" class="tb-glow" (click)="accept()">Accept</ion-button>
+        <ion-button size="small" fill="outline" (click)="decline()">Decline</ion-button>
+        <ion-button size="small" fill="clear" class="tb-danger" (click)="chatMenu()">Block…</ion-button>
+      </div>
+    </div>
+  } @else if (chat()?.state === 'request_out') {
+    <p class="request-out tb-muted">
+      Waiting for {{ other()?.username ? '@' + other()!.username : 'them' }} to accept.
+      {{ canSend() ? 'You can send ' + (3 - myMessagesInRequest()) + ' more until then.' : 'You can send more once they reply.' }}
+    </p>
+  }
+
+  @if (picking()) {
+    <div class="picker tb-glass">
+      <ion-select label="Surah" labelPlacement="stacked" interface="popover" [value]="pickSurah()" (ionChange)="setPickSurah($event.detail.value)">
+        @for (s of surahs; track s.number) {
+          <ion-select-option [value]="s.number">{{ s.number }}. {{ s.name }}</ion-select-option>
+        }
+      </ion-select>
+      <ion-select label="Ayah" labelPlacement="stacked" interface="popover" [value]="pickAyah()" (ionChange)="pickAyah.set(+$event.detail.value)">
+        @for (a of ayahOptions(); track a) {
+          <ion-select-option [value]="a">{{ a }}</ion-select-option>
+        }
+      </ion-select>
+      <ion-button size="small" (click)="attachAyah()">Attach</ion-button>
+    </div>
+  }
+
+  @if (attachment(); as a) {
+    <div class="pending">
+      <app-attachment-card [attachment]="a" />
+      <ion-button fill="clear" size="small" (click)="attachment.set(null)" aria-label="Remove attachment">
+        <ion-icon slot="icon-only" name="close" />
+      </ion-button>
+    </div>
+  }
+
+  <form class="composer" (submit)="send($event)">
+    <ion-button fill="clear" (click)="openAyahPicker()" aria-label="Attach an ayah" title="Attach an ayah" [disabled]="!canSend()">
+      <ion-icon slot="icon-only" name="book-outline" />
+    </ion-button>
+    <ion-textarea
+      class="input"
+      [autoGrow]="true"
+      [rows]="1"
+      [maxlength]="2000"
+      [disabled]="!canSend()"
+      placeholder="Message"
+      aria-label="Message"
+      [value]="draft()"
+      (ionInput)="draft.set(inputValue($event))"
+      (keydown)="onKey($event)"
+    />
+    <ion-button type="submit" class="send" [disabled]="sending() || !canSend() || (!draft().trim() && !attachment())" aria-label="Send">
+      @if (sending()) {
+        <ion-spinner name="dots" />
+      } @else {
+        <ion-icon slot="icon-only" name="send" />
+      }
+    </ion-button>
+  </form>
+</ion-footer>

@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   InfiniteScrollCustomEvent,
   IonBackButton,
@@ -85,10 +85,15 @@ import { StateView } from '../../shared/state-view';
                   <ion-button class="tb-glow" routerLink="/reflections/new"><ion-icon slot="start" name="create-outline" />Write</ion-button>
                 </div>
               } @else if (!d.author.deleted) {
-                <ion-button [fill]="following() ? 'outline' : 'solid'" [class.tb-glow]="!following()" (click)="toggleFollow()" [disabled]="busy()">
-                  <ion-icon slot="start" [name]="following() ? 'checkmark' : 'person-add-outline'" />
-                  {{ following() ? 'Following' : 'Follow' }}
-                </ion-button>
+                <div class="actions">
+                  <ion-button [fill]="following() ? 'outline' : 'solid'" [class.tb-glow]="!following()" (click)="toggleFollow()" [disabled]="busy()">
+                    <ion-icon slot="start" [name]="following() ? 'checkmark' : 'person-add-outline'" />
+                    {{ following() ? 'Following' : 'Follow' }}
+                  </ion-button>
+                  <ion-button fill="outline" (click)="message()">
+                    <ion-icon slot="start" name="mail-outline" />Message
+                  </ion-button>
+                </div>
               }
             </section>
 
@@ -135,6 +140,7 @@ export class AuthorPage {
   private readonly library = inject(LibraryService);
   private readonly notify = inject(NotifyService);
   private readonly names = inject(UserNamesService);
+  private readonly router = inject(Router);
 
   protected readonly page = new Loadable<AuthorData>();
   protected readonly sort = signal<ReflectionSort>('newest');
@@ -187,6 +193,11 @@ export class AuthorPage {
       },
       error: () => e.target.complete(),
     });
+  }
+
+  protected message(): void {
+    const next = `/messages/new?to=${encodeURIComponent(this.id())}`;
+    if (this.auth.requireLogin(next)) this.router.navigateByUrl(next);
   }
 
   protected toggleFollow(): void {

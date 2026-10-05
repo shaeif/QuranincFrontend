@@ -91,6 +91,24 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/auth/reset-password-page').then((m) => m.ResetPasswordPage),
       },
 
+      /* ---------- Messages ---------- */
+      {
+        path: 'messages',
+        title: 'Messages · Tadabbur',
+        loadComponent: () => import('./pages/messages/messages-page').then((m) => m.MessagesPage),
+      },
+      {
+        path: 'messages/new',
+        title: 'New message · Tadabbur',
+        loadComponent: () => import('./pages/messages/new-message-page').then((m) => m.NewMessagePage),
+      },
+      {
+        path: 'messages/:id',
+        title: 'Chat · Tadabbur',
+        canActivate: [authGuard],
+        loadComponent: () => import('./pages/messages/chat-page').then((m) => m.ChatPage),
+      },
+
       /* ---------- Signed in ---------- */
       {
         path: 'you',

@@ -14,6 +14,15 @@
   gap: 12px;
   padding: 20px 4px 4px;
 
+  &.compact {
+    gap: 8px;
+    padding-top: 8px;
+
+    h1 {
+      font-size: clamp(calc(28px * var(--tb-display-scale)), 5vw, calc(40px * var(--tb-display-scale)));
+    }
+  }
+
   h1 {
     font-size: clamp(calc(36px * var(--tb-display-scale)), 7vw, calc(60px * var(--tb-display-scale)));
   }
@@ -347,4 +356,71 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* ---------- Your day ---------- */
+.today {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.today-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  color: var(--tb-fg);
+  text-decoration: none;
+  min-width: 0;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--tb-gold-soft);
+  }
+
+  b {
+    display: block;
+    font-size: 14px;
+  }
+
+  small {
+    display: block;
+    font-size: 12px;
+    color: var(--tb-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  > span:not(.ti):not(.dot) {
+    min-width: 0;
+  }
+
+  .ti.lit {
+    box-shadow: var(--tb-glow);
+  }
+}
+
+.dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tb-teal);
+}
+
+.ti {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--tb-chip-bg);
+  color: var(--tb-gold);
+  font-size: 19px;
 }

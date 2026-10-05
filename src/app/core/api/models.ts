@@ -74,6 +74,8 @@ export interface UserProfile {
   emailVerified?: boolean;
   pictureUrl?: string;
   twoFactorEnabled?: boolean;
+  /** How many two-step recovery codes are still unused. */
+  recoveryCodesLeft?: number;
   createdAt?: number;
   /** The profile exactly as the API sent it (used to know which fields can be edited). */
   raw: Record<string, unknown>;

@@ -88,9 +88,11 @@ export class AccountApi {
     return this.api.post('/user/reset-password', { token: token.trim(), new_password: newPassword }, { anonymous: true });
   }
 
-  /** Returns fresh tokens for this device; every other session ends. */
-  changePassword(oldPassword: string, newPassword: string): Observable<unknown> {
-    return this.api.post('/user/change-password', { old_password: oldPassword, new_password: newPassword });
+  /** Returns fresh tokens for this device; every other session ends. `code` is needed when two-step is on. */
+  changePassword(oldPassword: string, newPassword: string, code?: string): Observable<unknown> {
+    const body: Record<string, string> = { old_password: oldPassword, new_password: newPassword };
+    if (code?.trim()) body['code'] = code.trim();
+    return this.api.post('/user/change-password', body);
   }
 
   getUser(id: string): Observable<UserProfile> {
@@ -157,7 +159,10 @@ export class AccountApi {
     return this.api.get('/user/export');
   }
 
-  deletePermanently(password: string): Observable<unknown> {
-    return this.api.post('/user/delete-permanently', { password });
+  /** `code` is needed when two-step is on. */
+  deletePermanently(password: string, code?: string): Observable<unknown> {
+    const body: Record<string, string> = { password };
+    if (code?.trim()) body['code'] = code.trim();
+    return this.api.post('/user/delete-permanently', body);
   }
 }

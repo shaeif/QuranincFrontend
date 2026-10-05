@@ -160,6 +160,7 @@ export class SurahPage {
       buttons: [
         { text: 'Write a reflection', icon: 'create-outline', data: 'write' },
         { text: 'Read reflections', icon: 'chatbubbles-outline', data: 'read' },
+        { text: 'Send in a message', icon: 'mail-outline', data: 'message' },
         { text: followed ? 'Stop following this verse' : 'Follow this verse', icon: 'notifications-outline', data: 'follow' },
         { text: 'Copy', icon: 'copy-outline', data: 'copy' },
         { text: 'Share', icon: 'share-social-outline', data: 'share' },
@@ -176,6 +177,11 @@ export class SurahPage {
         break;
       case 'read':
         this.router.navigate(['/reflections'], { queryParams: { surah: v.surah, ayah: v.ayah } });
+        break;
+      case 'message':
+        if (this.auth.requireLogin(`/messages/new?ayah=${v.surah}:${v.ayah}`)) {
+          this.router.navigate(['/messages/new'], { queryParams: { ayah: `${v.surah}:${v.ayah}` } });
+        }
         break;
       case 'follow':
         if (!this.auth.requireLogin()) return;

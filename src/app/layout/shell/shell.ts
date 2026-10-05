@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   IonContent,
   IonIcon,
+  IonBadge,
   IonLabel,
   IonMenu,
   IonRouterLinkWithHref,
@@ -13,6 +14,7 @@ import {
 } from '@ionic/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificationBadgeService } from '../../core/auth/notification-badge.service';
+import { ChatSyncService } from '../../core/chat/chat-sync.service';
 import { Avatar } from '../../shared/avatar';
 import { BrandMark } from '../../shared/brand-mark';
 
@@ -33,6 +35,7 @@ interface NavItem {
     RouterLinkActive,
     IonContent,
     IonIcon,
+    IonBadge,
     IonLabel,
     IonMenu,
     IonRouterLinkWithHref,
@@ -49,15 +52,25 @@ interface NavItem {
 export class Shell {
   protected readonly auth = inject(AuthService);
   protected readonly badge = inject(NotificationBadgeService);
+  protected readonly chats = inject(ChatSyncService);
 
+  /** Sidebar (desktop). */
   protected readonly nav: NavItem[] = [
     { tab: 'home', label: 'Home', icon: 'home' },
     { tab: 'quran', label: 'Quran', icon: 'book' },
     { tab: 'reflections', label: 'Reflections', icon: 'chatbubbles' },
+    { tab: 'messages', label: 'Messages', icon: 'mail' },
     { tab: 'search', label: 'Search', icon: 'search' },
   ];
 
-  protected readonly tabs: NavItem[] = [...this.nav, { tab: 'you', label: 'You', icon: 'person' }];
+  /** Bottom tabs (phones). Search lives in every header instead. */
+  protected readonly tabs: NavItem[] = [
+    { tab: 'home', label: 'Home', icon: 'home' },
+    { tab: 'quran', label: 'Quran', icon: 'book' },
+    { tab: 'reflections', label: 'Reflections', icon: 'chatbubbles' },
+    { tab: 'messages', label: 'Messages', icon: 'mail' },
+    { tab: 'you', label: 'You', icon: 'person' },
+  ];
 
   protected readonly mine: NavItem[] = [
     { tab: 'feed', label: 'Your feed', icon: 'newspaper' },

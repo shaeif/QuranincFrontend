@@ -142,3 +142,24 @@
     color: var(--ion-color-danger);
   }
 }
+
+.codes-left {
+  font-size: 13.5px;
+}
+
+.blocked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  b {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.small {
+  font-size: 13px;
+}

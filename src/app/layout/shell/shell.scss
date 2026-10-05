@@ -30,6 +30,14 @@
   }
 }
 
+.tab-badge {
+  --background: var(--tb-teal);
+  --color: var(--tb-bg);
+  font-size: 10px;
+  min-width: 18px;
+  border-radius: 9px;
+}
+
 /* ---------- Sidebar (992px and up) ---------- */
 ion-split-pane {
   --side-width: 264px;

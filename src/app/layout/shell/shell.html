@@ -11,6 +11,9 @@
               <a [routerLink]="'/' + item.tab" routerLinkActive="active" routerDirection="root" class="rail-link">
                 <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
                 <span>{{ item.label }}</span>
+                @if (item.tab === 'messages' && chats.badge()) {
+                  <span class="rail-count">{{ chats.badge() }}</span>
+                }
               </a>
             </li>
           }
@@ -74,6 +77,9 @@
           <ion-tab-button [tab]="item.tab">
             <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
             <ion-label>{{ item.label }}</ion-label>
+            @if (item.tab === 'messages' && chats.badge()) {
+              <ion-badge class="tab-badge">{{ chats.badge() > 99 ? '99+' : chats.badge() }}</ion-badge>
+            }
           </ion-tab-button>
         }
       </ion-tab-bar>

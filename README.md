@@ -63,6 +63,19 @@ The choice is saved on the device and applied before first paint, so there is no
 | Moderation queue: hide, restore, dismiss, delete | `/moderation` | `GET /reflection/reports`, `PUT /reflection/<id>/moderation` |
 | All users (admins) | `/admin/users` | `GET /user` |
 
+**Messages**
+
+| Screen | Route | API |
+|---|---|---|
+| Chats and message requests (tab, with unread badge) | `/messages` | `GET /chats`, `?box=requests`, `/chats/unread-count` |
+| A chat: bubbles, shared ayahs/reflections, seen, save, unsend, report, accept/decline, keep 7d/30d/always, clear, block | `/messages/:id` | `GET /chats/{id}`, `/messages`, `POST …/messages`, `/read`, `/accept`, `/decline`, `/clear`, `PUT …/retention`, `PUT·DELETE …/save`, `DELETE …/{message}`, `POST …/report`, `PUT /chats/blocks/{user}` |
+| New message / share an ayah or reflection / "Message" on a profile | `/messages/new?to=&ayah=&reflection=` | `POST /chats` |
+| Blocked people (Account page), reported messages (Moderation) | `/account`, `/moderation` | `GET /chats/blocks`, `GET·PUT /chats/reports` |
+
+Chats refresh by polling for now (the open chat every 5 s, the list every 15 s, the badge every 30 s, paused in
+the background). `core/chat/chat-sync.service.ts` is the one place to plug in the backend's realtime
+connection: pages listen to its `changed` stream.
+
 ### Sessions
 
 Tokens are kept on the device so people stay signed in. Before each request the app refreshes an access

@@ -11,6 +11,9 @@ import { ThemeToggle } from './theme-toggle';
   selector: 'app-header-actions',
   imports: [RouterLink, IonBadge, IonButton, IonIcon, IonRouterLink, Avatar, ThemeToggle],
   template: `
+    <ion-button routerLink="/search" class="search" aria-label="Search" title="Search">
+      <ion-icon slot="icon-only" name="search-outline" />
+    </ion-button>
     @if (auth.user(); as user) {
       <ion-button routerLink="/notifications" class="bell" [attr.aria-label]="label()" [title]="label()">
         <ion-icon slot="icon-only" name="notifications-outline" />
@@ -39,6 +42,8 @@ import { ThemeToggle } from './theme-toggle';
       font-size: 10px; min-width: 18px; border-radius: 9px; padding: 3px 5px;
     }
     .me { --padding-start: 6px; --padding-end: 6px; }
+    /* On wide screens Search is in the sidebar. */
+    @media (min-width: 992px) { .search { display: none; } }
     .login { margin-inline-start: 4px; }
   `,
 })
