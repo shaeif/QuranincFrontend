@@ -13,7 +13,9 @@ export class NotifyService {
   /** Copies text, telling the user whether it worked. */
   async copy(text: string, done = 'Copied'): Promise<void> {
     try {
-      await navigator.clipboard.writeText(text);
+      // The Clipboard API exists only on https (and localhost); plain-http pages use the older way.
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+      else if (!copyWithSelection(text)) throw new Error('copy failed');
       await this.show(done);
     } catch {
       await this.show("Couldn't copy on this device.");
@@ -31,5 +33,23 @@ export class NotifyService {
       }
     }
     await this.copy(text, 'Verse copied to share');
+  }
+}
+
+/** Copies through a hidden text area and execCommand, which works without https. */
+function copyWithSelection(text: string): boolean {
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    area.remove();
   }
 }
