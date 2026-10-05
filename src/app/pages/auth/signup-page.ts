@@ -13,14 +13,12 @@ import {
   IonInputPasswordToggle,
   IonSpinner,
   IonTitle,
-  IonToggle,
   IonToolbar,
 } from '@ionic/angular';
 import { AccountApi, SignUpForm } from '../../core/api/account-api';
 import { toApiError } from '../../core/api/api-client';
-import { ARABIC_SCRIPTS } from '../../core/quran/quran-texts';
-import { ReadingSettingsService } from '../../core/settings/reading-settings.service';
 import { inputValue, passwordProblem } from '../../core/util/forms';
+import { DisplayChoices } from '../../shared/display-choices';
 import { ThemeToggle } from '../../shared/theme-toggle';
 
 type Field = keyof SignUpForm | 'confirm';
@@ -55,23 +53,16 @@ const SERVER_FIELDS: Record<string, Field> = {
     IonInputPasswordToggle,
     IonSpinner,
     IonTitle,
-    IonToggle,
     IonToolbar,
     ThemeToggle,
+    DisplayChoices,
   ],
   templateUrl: './signup-page.html',
   styleUrl: './auth-pages.scss',
 })
 export class SignupPage {
   private readonly api = inject(AccountApi);
-  private readonly reading = inject(ReadingSettingsService);
   protected readonly inputValue = inputValue;
-  protected readonly scripts = ARABIC_SCRIPTS;
-
-  /** How they'd like to read the Quran: saved on this device once the account is created. */
-  protected readonly arabicType = signal(this.reading.arabicType());
-  protected readonly showTranslation = signal(this.reading.showTranslation());
-  protected readonly showTransliteration = signal(this.reading.showTransliteration());
 
   protected readonly form = signal<SignUpForm & { confirm: string }>({
     username: '',
@@ -140,6 +131,8 @@ export class SignupPage {
     if (!/^\s*\+?\d{1,4}\s*$/.test(f.countryCode)) errors.countryCode = 'Enter your country calling code, like +91 or +44.';
     if (f.phone.trim() && !/^[\d\s-]{4,20}$/.test(f.phone.trim())) errors.phone = 'Enter the number without the country code, digits only.';
     else if (this.phoneTaken()) errors.phone = 'An account already uses this phone number.';
+    const dob = dateOfBirthProblem(f.dateOfBirth);
+    if (dob) errors.dateOfBirth = dob;
     const pw = passwordProblem(f.password, f.username, f.email);
     if (pw) errors.password = pw;
     if (f.confirm !== f.password) errors.confirm = "The passwords don't match.";
@@ -151,9 +144,6 @@ export class SignupPage {
     this.api.createUser(f).subscribe({
       next: () => {
         this.busy.set(false);
-        this.reading.setArabicType(this.arabicType());
-        this.reading.setShowTranslation(this.showTranslation());
-        this.reading.setShowTransliteration(this.showTransliteration());
         this.done.set(true);
       },
       error: (err: unknown) => {
@@ -179,3 +169,14 @@ export class SignupPage {
     });
   }
 }
+
+/** Date of birth is required: a real date (YYYY-MM-DD from the date field), not in the future. */
+export function dateOfBirthProblem(value: string, today = new Date()): string {
+  if (!value.trim()) return 'Enter your date of birth.';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  const date = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  if (!m || !date || date.getUTCDate() !== +m[3] || +m[1] < 1900) return 'Enter a valid date of birth.';
+  if (value.trim() > today.toISOString().slice(0, 10)) return "Your date of birth can't be in the future.";
+  return '';
+}
+

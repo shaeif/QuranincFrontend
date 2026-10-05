@@ -1,0 +1,67 @@
+<section class="tb-section" aria-labelledby="theme-title">
+  <div class="tb-section-head"><h2 id="theme-title" [class.small]="compact()">Theme</h2></div>
+  <div class="themes" role="radiogroup" aria-labelledby="theme-title">
+    @for (t of themes; track t.value) {
+      <button
+        type="button"
+        role="radio"
+        class="theme tb-tile"
+        [class.on]="theme.preference() === t.value"
+        [attr.aria-checked]="theme.preference() === t.value"
+        (click)="theme.setPreference(t.value)"
+      >
+        <span class="preview" [class]="'preview preview--' + t.value" aria-hidden="true">
+          <span class="pv-ar">رَحْمَة</span>
+          <span class="pv-line"></span>
+          <span class="pv-line short"></span>
+        </span>
+        <span class="theme-text">
+          <b>{{ t.name }}</b>
+          <small>{{ t.description }}</small>
+        </span>
+        <span class="radio" aria-hidden="true"></span>
+      </button>
+    }
+  </div>
+</section>
+
+<section class="tb-section" id="quran-text" aria-labelledby="script-title">
+  <div class="tb-section-head"><h2 id="script-title" [class.small]="compact()">Quran text</h2></div>
+  <p class="tb-muted note">The Arabic is always shown. Choose its script, and which lines appear under it.</p>
+  <div class="scripts" role="radiogroup" aria-labelledby="script-title">
+    @for (sc of scripts; track sc.type) {
+      <button type="button" role="radio" class="script tb-tile" [class.on]="reading.arabicType() === sc.type"
+        [attr.aria-checked]="reading.arabicType() === sc.type" (click)="reading.setArabicType(sc.type)">
+        <span class="theme-text"><b>{{ sc.name }}</b><small>{{ sc.description }}</small></span>
+        <span class="radio" aria-hidden="true"></span>
+      </button>
+    }
+  </div>
+  <div class="panel tb-tile">
+    <ion-toggle [checked]="reading.showTranslation()" (ionChange)="reading.setShowTranslation($event.detail.checked)" justify="space-between">
+      English translation (Sahih International)
+    </ion-toggle>
+    <ion-toggle [checked]="reading.showTransliteration()" (ionChange)="reading.setShowTransliteration($event.detail.checked)" justify="space-between">
+      Transliteration (Arabic sounds in Latin letters)
+    </ion-toggle>
+  </div>
+</section>
+
+<section class="tb-section" aria-labelledby="reading-title">
+  <div class="tb-section-head"><h2 id="reading-title" [class.small]="compact()">Text size</h2></div>
+  <div class="panel tb-tile">
+    <p class="sample tb-quran" lang="ar" [style.font-size.px]="reading.arabicSize()">{{ sample }}</p>
+    <ion-range
+      aria-label="Arabic text size"
+      [min]="sizes.min"
+      [max]="sizes.max"
+      [step]="sizes.step"
+      [snaps]="true"
+      [value]="reading.arabicSize()"
+      (ionInput)="onSize($event.detail.value)"
+    >
+      <span slot="start" class="range-label small" lang="ar">أ</span>
+      <span slot="end" class="range-label large" lang="ar">أ</span>
+    </ion-range>
+  </div>
+</section>

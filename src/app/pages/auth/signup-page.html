@@ -87,7 +87,7 @@
               }
             </div>
             <div class="col">
-              <ion-input label="Date of birth (optional)" labelPlacement="stacked" fill="outline" type="date" autocomplete="bday"
+              <ion-input label="Date of birth" labelPlacement="stacked" fill="outline" type="date" autocomplete="bday" [required]="true"
                 [max]="today" [value]="form().dateOfBirth" (ionInput)="set('dateOfBirth', $event)" />
               @if (errors().dateOfBirth) {
                 <p class="tb-field-error">{{ errors().dateOfBirth }}</p>
@@ -96,20 +96,9 @@
           </div>
 
           <fieldset class="reading">
-            <legend>How would you like to read the Quran?</legend>
-            <ion-select label="Arabic script" labelPlacement="floating" fill="outline" interface="popover"
-              [value]="arabicType()" (ionChange)="arabicType.set($event.detail.value)">
-              @for (sc of scripts; track sc.type) {
-                <ion-select-option [value]="sc.type">{{ sc.name }}</ion-select-option>
-              }
-            </ion-select>
-            <ion-toggle [checked]="showTranslation()" (ionChange)="showTranslation.set($event.detail.checked)" justify="space-between">
-              English translation under each ayah
-            </ion-toggle>
-            <ion-toggle [checked]="showTransliteration()" (ionChange)="showTransliteration.set($event.detail.checked)" justify="space-between">
-              Transliteration (Arabic sounds in Latin letters)
-            </ion-toggle>
-            <p class="tb-field-hint">The Arabic is always shown. You can change this any time in Settings.</p>
+            <legend>Make it yours</legend>
+            <p class="tb-field-hint">Choose how Tadabbur looks and how the Quran is shown. You can change this any time in Settings.</p>
+            <app-display-choices [compact]="true" />
           </fieldset>
 
           <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"

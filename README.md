@@ -43,7 +43,7 @@ The choice is saved on the device and applied before first paint, so there is no
 | Screen | Route | API |
 |---|---|---|
 | Log in, with the two-step code when it's on | `/login` | `POST /user/login`, `/user/login/2fa` |
-| Sign up (checks username, email and phone as you go) | `/signup` | `POST /user/create_user`, `GET /user/check-username`, `/check-email`, `/check-phone` |
+| Sign up (checks username, email and phone as you go; date of birth required; theme and Quran text choices) | `/signup` | `POST /user/create_user`, `GET /user/check-username`, `/check-email`, `/check-phone` |
 | Verify email, resend the code | `/verify-email?token=` | `POST /user/verify-email`, `/resend-verification` |
 | Forgot / reset password | `/forgot-password`, `/reset-password?token=` | `POST /user/request-password-reset`, `/reset-password` |
 | Account: profile, picture, password, two-step (QR code + recovery codes), log out everywhere, download data, delete forever | `/account` | `GET /user/me`, `PUT /user/<id>`, `PUT·DELETE /user/<id>/picture`, `POST /user/change-password`, `/2fa/*`, `/logout-all`, `GET /user/export`, `POST /user/delete-permanently` |
@@ -100,8 +100,9 @@ ended (logged out elsewhere, password changed, refresh token reused) signs the a
 ### Quran text
 
 The Arabic is always shown. Readers pick its script (Uthmani, Uthmani minimal, Simple, Simple minimal,
-Simple plain, Simple clean) and turn the English translation and the transliteration on or off, in the
-reader's toolbar or in Settings. The choices are saved on the device.
+Simple plain, Simple clean), turn the English translation and the transliteration on or off, and set the
+text size, in Settings or when they sign up (the same `DisplayChoices` component, with the theme). The
+reader shows what is chosen, with a link to change it. The choices are saved on the device.
 
 ### Matching the backend
 
@@ -110,8 +111,8 @@ Requests follow the backend's Insomnia export (`scripts/export_insomnia.py`). Wo
 - Whole surahs come from `GET /quran/get_surah?quran_type=&surah_id=&page=&size=100`, several pages in
   parallel for long surahs (the path form `/quran/<type>/<surah>` only returns the first 10 ayahs). Each item's
   text is `quran_text.text`.
-- Sign-up sends `country_code` (required) and `phone_number` (optional, without the code), plus optional
-  `country`, `gender` and `date_of_birth`. The account page edits `first_name`, `last_name`, `country`,
+- Sign-up sends `country_code` and `date_of_birth` (both required) and `phone_number` (optional, without the
+  code), plus optional `country` and `gender`. The account page edits `first_name`, `last_name`, `country`,
   `country_code` and `phone_number`.
 - Roles come from `privilege` on `/user/me`. Resending the verification email needs a login and has no body.
 - Follows are listed per kind (`GET /user/follows?kind=user|ayah|reflection`).
