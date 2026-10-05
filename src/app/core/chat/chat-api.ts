@@ -12,6 +12,11 @@ export interface OutgoingMessage {
   attachment?: Pick<Attachment, 'kind' | 'ref'>;
 }
 
+/** The API's largest page (lists default to 10). */
+const MAX_SIZE = 100;
+/** Messages per page in a chat. */
+export const MESSAGES_PAGE = 50;
+
 /** /chats: message requests, disappearing messages, saving, blocking and reports. */
 @Injectable({ providedIn: 'root' })
 export class ChatApi {
@@ -29,9 +34,9 @@ export class ChatApi {
     return body;
   }
 
-  /** GET /chats?box=inbox|requests */
+  /** GET /chats?box=inbox|requests: the 100 most recent chats. */
   list(box: 'inbox' | 'requests' = 'inbox'): Observable<ChatSummary[]> {
-    return this.api.get('/chats', { box: box === 'inbox' ? undefined : box }).pipe(
+    return this.api.get('/chats', { box: box === 'inbox' ? undefined : box, size: MAX_SIZE }).pipe(
       map((raw) =>
         extractArray(raw)
           .map((c) => toChat(c, this.me()))
@@ -48,11 +53,11 @@ export class ChatApi {
     return this.api.get(`/chats/${encodeURIComponent(chatId)}`).pipe(map((raw) => toChat(raw, this.me())));
   }
 
-  /** GET /chats/{id}/messages: newest first from the API, returned oldest first for display. */
-  messages(chatId: string): Observable<Page<ChatMessage>> {
-    return this.api.get(`/chats/${encodeURIComponent(chatId)}/messages`).pipe(
+  /** GET /chats/{id}/messages: page 1 is the newest. Items come back oldest first, for display. */
+  messages(chatId: string, page = 1, size = MESSAGES_PAGE): Observable<Page<ChatMessage>> {
+    return this.api.get(`/chats/${encodeURIComponent(chatId)}/messages`, { page, size }).pipe(
       map((raw) => {
-        const p = toPage(raw, (m) => toMessage(m, this.me()));
+        const p = toPage(raw, (m) => toMessage(m, this.me()), page, size);
         return { ...p, items: [...p.items].reverse() };
       }),
     );
@@ -119,13 +124,13 @@ export class ChatApi {
   }
 
   blocked(): Observable<BlockedUser[]> {
-    return this.api.get('/chats/blocks').pipe(map((raw) => extractArray(raw).map(toBlocked)));
+    return this.api.get('/chats/blocks', { size: MAX_SIZE }).pipe(map((raw) => extractArray(raw).map(toBlocked)));
   }
 
   /* ---------- Moderators ---------- */
 
   reports(): Observable<ChatReport[]> {
-    return this.api.get('/chats/reports').pipe(map((raw) => extractArray(raw).map(toChatReport)));
+    return this.api.get('/chats/reports', { size: MAX_SIZE }).pipe(map((raw) => extractArray(raw).map(toChatReport)));
   }
 
   review(reportId: string, action: 'dismiss' | 'remove'): Observable<unknown> {

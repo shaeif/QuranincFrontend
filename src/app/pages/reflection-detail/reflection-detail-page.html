@@ -69,7 +69,7 @@
               <ul class="comments">
                 @for (c of comments.data()!.items; track c.id) {
                   <li class="comment tb-tile">
-                    <app-avatar [name]="c.authorName" [size]="30" />
+                    <app-avatar [name]="c.authorName" [src]="c.authorPictureUrl" [size]="30" />
                     <div class="c-body">
                       <header>
                         @if (c.authorId) {

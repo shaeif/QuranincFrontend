@@ -48,3 +48,21 @@ export function partOfDay(date = new Date()): string {
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Sanitized HTML from the API (reflection text) → plain text, keeping line and paragraph breaks. */
+export function plainText(html: string): string {
+  if (!/[<&]/.test(html)) return html;
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, code: string) => {
+      if (code[0] !== '#') return ENTITIES[code.toLowerCase()] ?? whole;
+      const n = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : Number(code.slice(1));
+      return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : whole;
+    })
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

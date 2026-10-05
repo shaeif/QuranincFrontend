@@ -2,6 +2,8 @@ export const environment = {
   production: true,
   /** Quran Reflections API, production stack. */
   apiUrl: 'http://192.168.10.94:5000',
+  /** Realtime WebSocket (production stack): chats, notifications, moderation. Must be wss:// when the app is served over https. Empty turns it off (the app polls). */
+  realtimeUrl: 'ws://192.168.10.94:5001/ws',
   quranTextType: 'quran-uthmani',
   translationType: 'quran-translation-sahih',
   /** Sentry project DSN (Settings → Client Keys). Empty turns error reporting off. */

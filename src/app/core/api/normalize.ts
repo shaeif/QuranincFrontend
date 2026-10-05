@@ -1,4 +1,5 @@
 import { API_BASE } from './api-client';
+import { plainText } from '../util/format';
 import {
   AppNotification,
   AuthorPage,
@@ -205,7 +206,7 @@ export function toReflection(raw: unknown): Reflection {
   const author = isObject(r['author']) ? r['author'] : isObject(r['created_by']) ? (r['created_by'] as Json) : {};
   return {
     id: str(r['id'], r['_id'], r['reflection_id']) ?? '',
-    text: str(r['reflection'], r['text'], r['content']) ?? '',
+    text: plainText(str(r['reflection'], r['text'], r['content']) ?? ''),
     surah: num(r['surah_id'], r['surah']) ?? 0,
     ayah: num(r['ayah_id'], r['ayah']) ?? 0,
     highlightText: str(r['highlight_text']),
@@ -214,6 +215,7 @@ export function toReflection(raw: unknown): Reflection {
     authorName:
       str(r['created_by_username'], r['username'], r['author_name'], author['username'],
         typeof r['created_by'] === 'string' ? r['created_by'] : undefined) ?? '',
+    authorPictureUrl: pictureUrl(r['created_by_profile_picture'] ?? author['profile_picture']),
     likeCount: num(r['like_count']) ?? 0,
     commentCount: num(r['comment_count']) ?? 0,
     createdAt: time(r['created_at_ms'], r['created_at'], r['timestamp']),
@@ -233,6 +235,7 @@ export function toComment(raw: unknown): ReflectionComment {
     text: str(c['text']) ?? '',
     authorId: str(author['id'], c['user_id']),
     authorName: str(author['username'], c['username']) ?? 'Anonymous',
+    authorPictureUrl: pictureUrl(author['profile_picture']),
     createdAt: time(c['created_at'], c['created_at_ms']),
   };
 }

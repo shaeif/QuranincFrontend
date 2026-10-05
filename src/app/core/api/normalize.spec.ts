@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { extractArray, safeHighlight, toAuthorPage, toAyahTexts, toPage, toReflection, toSearchVerse } from './normalize';
+import { plainText } from '../util/format';
+import { extractArray, safeHighlight, toAuthorPage, toAyahTexts, toComment, toNotification, toPage, toReflection, toSearchVerse } from './normalize';
 
 describe('normalize', () => {
   it('reads a reflection from an Elasticsearch hit', () => {
@@ -85,5 +86,33 @@ describe('author names', () => {
 
   it('leaves the name empty (to be looked up) when a reflection has only created_by_id', () => {
     expect(toReflection({ id: 'r1', created_by_id: 'u1' }).authorName).toBe('');
+  });
+
+  it('reads created_by_username, the author picture and comment authors', () => {
+    const r = toReflection({ id: 'r', reflection: 'x', created_by_id: 'u2', created_by_username: 'fe_friend', created_by_profile_picture: '/user/u2/picture?v=1' });
+    expect(r).toMatchObject({ authorId: 'u2', authorName: 'fe_friend' });
+    expect(r.authorPictureUrl).toMatch(/^https?:\/\/.+\/user\/u2\/picture\?v=1$/);
+    const c = toComment({ id: 'k', text: 'So true', author: { id: 'u3', username: 'fe_user', profile_picture: null } });
+    expect(c).toMatchObject({ authorId: 'u3', authorName: 'fe_user', authorPictureUrl: undefined });
+  });
+
+  it('reads get_surah items by quran_text.aya', () => {
+    const texts = toAyahTexts({ data: [{ quran_text: { aya: 7, text: 'seven' } }, { quran_text: { aya: 8, text: 'eight' } }], page: 4, size: 2 }, 6);
+    expect([...texts.entries()]).toEqual([[7, 'seven'], [8, 'eight']]);
+  });
+
+  it('reads notifications with and without an actor', () => {
+    const n = toNotification({
+      id: 'n1', kind: 'followed_comment', read: false, actor: { id: 'u5', username: 'fe_admin' }, actor_count: 1,
+      reflection: { id: 'r1', surah_id: 2, ayah_id: 255 }, comment: { id: 'k', text: 'So true' }, updated_at: '2026-10-05T08:11:29',
+    });
+    expect(n).toMatchObject({ kind: 'followed_comment', reflectionId: 'r1', reflectionSurah: 2, reflectionAyah: 255, commentText: 'So true' });
+    expect(toNotification({ id: 'n2', kind: 'message_report', actor: null, reflection: null }).actor).toBeUndefined();
+  });
+
+  it('turns sanitized HTML into plain text', () => {
+    expect(plainText('<p>Ease &amp; hardship</p><p>Line&nbsp;two &#39;ok&#39;</p>')).toBe("Ease & hardship\nLine two 'ok'");
+    expect(plainText('a < b')).toBe('a < b');
+    expect(plainText('plain')).toBe('plain');
   });
 });

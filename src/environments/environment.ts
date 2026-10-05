@@ -9,6 +9,8 @@ export const environment = {
   /** Text type for Arabic in the reader: GET /quran/<type>/<surah>. Backend types: quran-simple, quran-uthmani,
    *  quran-uthmani-min, quran-simple-min, quran-simple-plain, quran-simple-clean, quran-transliteration,
    *  quran-translation-sahih. */
+  /** Realtime WebSocket (dev stack): chats, notifications, moderation. Must be wss:// when the app is served over https. Empty turns it off (the app polls). */
+  realtimeUrl: 'ws://192.168.10.94:8001/ws',
   quranTextType: 'quran-uthmani',
   /** Text type used for the English translation (Sahih International). */
   translationType: 'quran-translation-sahih',

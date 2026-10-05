@@ -28,6 +28,13 @@ export class Loadable<T> {
     });
   }
 
+  /** Reloads without showing the loading state again; failures keep what is shown. */
+  refresh(source: Observable<T>): void {
+    if (this.status() !== 'ready') return this.load(source);
+    this.sub?.unsubscribe();
+    this.sub = source.subscribe({ next: (value) => this.data.set(value), error: () => undefined });
+  }
+
   cancel(): void {
     this.sub?.unsubscribe();
   }

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
-import { ApiClient } from './api-client';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { ApiClient, QueryParams } from './api-client';
 import {
   AppNotification,
   FeedItem,
@@ -28,6 +28,11 @@ import {
   toUserSummary,
 } from './normalize';
 
+/** The API's largest page; lists default to 10 items. */
+const MAX_SIZE = 100;
+/** At most this many pages are fetched for a whole list (2,000 items). */
+const MAX_PAGES = 20;
+
 /** The signed-in user's own things: bookmarks, likes, follows, feed, reading, notifications. */
 @Injectable({ providedIn: 'root' })
 export class LibraryApi {
@@ -46,17 +51,17 @@ export class LibraryApi {
   }
 
   bookmarkedReflections(): Observable<Page<Reflection>> {
-    return this.api.get('/user/bookmarks', { kind: 'reflection' }).pipe(map((r) => toPage(r, toReflection)));
+    return this.all('/user/bookmarks', { kind: 'reflection' }, toReflection);
   }
 
   bookmarkedAyahs(): Observable<Page<LikedVerse>> {
-    return this.api.get('/user/bookmarks', { kind: 'ayah' }).pipe(map((r) => toPage(r, toLikedVerse)));
+    return this.all('/user/bookmarks', { kind: 'ayah' }, toLikedVerse);
   }
 
   /* ---------- Likes ---------- */
 
   likedReflections(): Observable<Page<Reflection>> {
-    return this.api.get('/user/likes').pipe(map((r) => toPage(r, toReflection)));
+    return this.all('/user/likes', {}, toReflection);
   }
 
   likeAyah(surah: number, ayah: number, on: boolean): Observable<{ liked: boolean; count: number }> {
@@ -73,7 +78,7 @@ export class LibraryApi {
   }
 
   likedAyahs(): Observable<Page<LikedVerse>> {
-    return this.api.get('/user/likes/ayahs').pipe(map((r) => toPage(r, toLikedVerse)));
+    return this.all('/user/likes/ayahs', {}, toLikedVerse);
   }
 
   /* ---------- Follows and feed ---------- */
@@ -86,23 +91,21 @@ export class LibraryApi {
 
   /** GET /user/follows?kind=user: public profiles of the people you follow. */
   followedUsers(): Observable<UserSummary[]> {
-    return this.api.get('/user/follows', { kind: 'user' }).pipe(map((r) => extractArray(r).map(toUserSummary)));
+    return this.all('/user/follows', { kind: 'user' }, toUserSummary).pipe(map((p) => p.items));
   }
 
   /** GET /user/follows?kind=ayah: with Arabic and translation. */
   followedAyahs(): Observable<LikedVerse[]> {
-    return this.api.get('/user/follows', { kind: 'ayah' }).pipe(map((r) => extractArray(r).map(toLikedVerse)));
+    return this.all('/user/follows', { kind: 'ayah' }, toLikedVerse).pipe(map((p) => p.items));
   }
 
   /** GET /user/follows?kind=reflection: hidden or deleted ones are marked unavailable. */
   followedReflections(): Observable<FollowEntry[]> {
-    return this.api
-      .get('/user/follows', { kind: 'reflection' })
-      .pipe(map((r) => extractArray(r).map(toFollowedReflection)));
+    return this.all('/user/follows', { kind: 'reflection' }, toFollowedReflection).pipe(map((p) => p.items));
   }
 
   followers(): Observable<UserSummary[]> {
-    return this.api.get('/user/followers').pipe(map((r) => extractArray(r).map(toUserSummary)));
+    return this.all('/user/followers', {}, toUserSummary).pipe(map((p) => p.items));
   }
 
   feed(sort: ReflectionSort = 'activity', page = 1, size = 20): Observable<Page<FeedItem>> {
@@ -127,14 +130,16 @@ export class LibraryApi {
   }
 
   readingHistory(): Observable<ReadingHistoryEntry[]> {
-    return this.api.get('/user/reading-progress/history').pipe(map((r) => extractArray(r).map(toHistoryEntry)));
+    return this.api
+      .get('/user/reading-progress/history', { size: MAX_SIZE })
+      .pipe(map((r) => extractArray(r).map(toHistoryEntry)));
   }
 
   /* ---------- Notifications ---------- */
 
   /** GET /user/notifications: newest first, kept 90 days. */
   notifications(): Observable<Page<AppNotification> & { unread: number }> {
-    return this.api.get('/user/notifications').pipe(
+    return this.api.get('/user/notifications', { size: MAX_SIZE }).pipe(
       map((r) => ({ ...toPage(r, toNotification), unread: Number(field(r, 'unread')) || 0 })),
     );
   }
@@ -155,5 +160,18 @@ export class LibraryApi {
 
   deleteNotification(id: string): Observable<unknown> {
     return this.api.delete(`/user/notifications/${encodeURIComponent(id)}`);
+  }
+  /** Every page of a listing: the first, then the rest in parallel. */
+  private all<T>(path: string, query: QueryParams, toItem: (raw: unknown) => T): Observable<Page<T>> {
+    const get = (page: number) =>
+      this.api.get(path, { ...query, page, size: MAX_SIZE }).pipe(map((r) => toPage(r, toItem, page, MAX_SIZE)));
+    return get(1).pipe(
+      switchMap((first) => {
+        const pages = Math.min(Math.ceil(first.total / MAX_SIZE), MAX_PAGES);
+        if (pages <= 1 || first.items.length < MAX_SIZE) return of(first);
+        const rest = Array.from({ length: pages - 1 }, (_, i) => get(i + 2));
+        return forkJoin(rest).pipe(map((more) => ({ ...first, items: [first.items, ...more.map((p) => p.items)].flat() })));
+      }),
+    );
   }
 }

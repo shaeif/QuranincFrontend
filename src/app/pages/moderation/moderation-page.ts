@@ -1,4 +1,5 @@
-import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   IonBackButton,
   IonButton,
@@ -20,6 +21,7 @@ import { ReflectionApi } from '../../core/api/reflection-api';
 import { ChatApi } from '../../core/chat/chat-api';
 import { ChatReport } from '../../core/chat/chat-models';
 import { AuthService } from '../../core/auth/auth.service';
+import { RealtimeService } from '../../core/realtime/realtime.service';
 import { Loadable } from '../../core/util/loadable';
 import { RouterLink } from '@angular/router';
 import { AttachmentCard } from '../../shared/attachment-card';
@@ -184,15 +186,27 @@ export class ModerationPage {
   protected readonly queue = new Loadable<ReportGroup[]>();
   protected readonly busy = signal('');
   protected readonly tab = signal<'reflections' | 'messages'>('reflections');
+  /** ?tab=messages opens the reported messages (from a notification). */
+  readonly tabParam = input('', { alias: 'tab' });
   protected readonly chatReports = new Loadable<ChatReport[]>();
 
   constructor() {
+    effect(() => this.tab.set(this.tabParam() === 'messages' ? 'messages' : 'reflections'));
     effect(() => {
       if (this.auth.isModerator()) untracked(() => {
         this.load();
         this.loadChatReports();
       });
     });
+    // New reports and other moderators' decisions arrive live.
+    inject(RealtimeService)
+      .events.pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe((e) => {
+        if (!this.auth.isModerator()) return;
+        const aboutMessages = e.type === 'moderation.message_report' || (e.type === 'moderation.resolved' && !!e['message_report_id']);
+        if (aboutMessages) this.chatReports.refresh(this.chats.reports());
+        else if (e.type.startsWith('moderation.')) this.queue.refresh(this.api.reports());
+      });
   }
 
   protected load(done?: () => void): void {

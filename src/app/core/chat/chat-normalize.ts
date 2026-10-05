@@ -1,5 +1,6 @@
 import { UserSummary } from '../api/models';
 import { pictureUrl, toUserSummary } from '../api/normalize';
+import { plainText } from '../util/format';
 import { Attachment, AttachmentKind, BlockedUser, ChatMessage, ChatReport, ChatState, ChatSummary, ChatUnread, Retention } from './chat-models';
 
 /**
@@ -43,17 +44,20 @@ export function toAttachment(raw: unknown): Attachment | undefined {
   if (!isObject(raw)) return undefined;
   const kind = str(raw['kind'], raw['type']) as AttachmentKind | undefined;
   if (kind !== 'ayah' && kind !== 'reflection' && kind !== 'comment') return undefined;
-  const preview = isObject(raw['preview']) ? raw['preview'] : isObject(raw['data']) ? raw['data'] : raw;
-  const surah = num(preview['surah'], preview['surah_id']);
-  const ayah = num(preview['ayah'], preview['ayah_id']);
-  const author = isObject(preview['author']) ? preview['author'] : {};
+  // The API puts the preview on the attachment itself ({kind, surah, ayah, text_ar, translation} …).
+  const p = isObject(raw['preview']) ? raw['preview'] : raw;
+  const surah = num(p['surah'], p['surah_id']);
+  const ayah = num(p['ayah'], p['ayah_id']);
+  const author = isObject(p['author']) ? p['author'] : {};
+  const text = str(p['translation'], p['reflection'], p['text'], p['excerpt']);
   return {
     kind,
-    ref: str(raw['ref'], raw['id'], surah && ayah ? `${surah}:${ayah}` : undefined) ?? '',
-    textAr: str(preview['text_ar']),
-    text: str(preview['translation'], preview['reflection'], preview['text'], preview['excerpt']),
-    authorName: str(author['username'], preview['username'], preview['created_by_username']),
-    unavailable: raw['unavailable'] === true || preview['unavailable'] === true,
+    ref: str(raw['ref'], kind === 'ayah' && surah && ayah ? `${surah}:${ayah}` : undefined, raw['id']) ?? '',
+    textAr: str(p['text_ar']),
+    text: text && kind !== 'ayah' ? plainText(text) : text,
+    authorName: str(author['username'], p['username'], p['created_by_username']),
+    reflectionId: str(p['reflection_id']),
+    unavailable: raw['unavailable'] === true || p['unavailable'] === true,
   };
 }
 
@@ -75,7 +79,12 @@ export function toMessage(raw: unknown, myId?: string): ChatMessage {
     seenAt: time(m['seen_at'], m['read_at']),
     expiresAt: expires === null ? null : time(expires),
     savedByMe: m['saved_by_me'] === true || m['saved'] === true,
-    saved: m['saved'] === true || m['saved_by_me'] === true || m['saved_by_other'] === true || (num(m['saved_count']) ?? 0) > 0,
+    saved:
+      m['saved'] === true ||
+      m['saved_by_me'] === true ||
+      m['saved_by_them'] === true ||
+      m['saved_by_other'] === true ||
+      (num(m['saved_count']) ?? 0) > 0,
   };
 }
 
@@ -86,6 +95,7 @@ function toState(c: Json, myId?: string): ChatState {
   if (state === 'request_in' || state === 'incoming') return 'request_in';
   if (state === 'request_out' || state === 'outgoing' || state === 'sent') return 'request_out';
   if (!isRequest) return 'active';
+  if (typeof c['requested_by_me'] === 'boolean') return c['requested_by_me'] ? 'request_out' : 'request_in';
   if (c['incoming'] === true) return 'request_in';
   if (c['outgoing'] === true) return 'request_out';
   return requestedBy && myId && requestedBy === myId ? 'request_out' : 'request_in';
@@ -120,21 +130,43 @@ export function toBlocked(raw: unknown): BlockedUser {
   return { ...toUserSummary(user), blockedAt: time(b['blocked_at'], b['created_at']) };
 }
 
+/** GET /chats/reports: a copy of the reported message with who sent it. */
 export function toChatReport(raw: unknown): ChatReport {
   const r = isObject(raw) ? raw : {};
-  const msg = r['message'] ?? r['message_copy'] ?? r['copy'];
+  const copy = r['message'] ?? r['message_copy'] ?? r['copy'];
+  const msg = isObject(copy) ? copy : { id: r['message_id'], text: r['text'], attachment: r['attachment'], created_at: r['sent_at'] };
   const sender: UserSummary | undefined = isObject(r['sender'])
     ? toUserSummary(r['sender'])
     : str(r['sender_username'])
       ? { id: str(r['sender_id']) ?? '', username: str(r['sender_username'])!, pictureUrl: pictureUrl(r['sender_picture']) }
       : undefined;
+  const status = str(r['status'])?.toLowerCase();
   return {
     id: str(r['id'], r['report_id']) ?? '',
-    message: toMessage(isObject(msg) ? msg : { text: str(r['text']) }),
+    message: toMessage({ ...msg, sender_id: sender?.id }),
     sender,
     reason: str(r['reason']) ?? 'other',
     note: str(r['note']),
-    createdAt: time(r['created_at']),
-    resolved: r['resolved'] === true || !!r['resolved_at'],
+    createdAt: time(r['reported_at'], r['created_at']),
+    resolved: (status !== undefined && status !== 'open') || r['resolved'] === true || !!r['resolved_at'] || !!r['reviewed_at'],
   };
+}
+
+/**
+ * Puts a fresh newest page (oldest first) over the messages on screen. Older
+ * messages loaded earlier stay; within the page's time span the page wins, so
+ * unsent messages disappear and seen/saved changes show.
+ */
+export function mergeNewest(current: ChatMessage[], fresh: ChatMessage[], complete: boolean): ChatMessage[] {
+  if (complete || !fresh.length) return fresh;
+  const ids = new Set(fresh.map((m) => m.id));
+  const oldest = fresh[0].createdAt ?? 0;
+  const older = current.filter((m) => !ids.has(m.id) && (m.createdAt ?? 0) < oldest);
+  return [...older, ...fresh];
+}
+
+/** Adds an older page in front, skipping any message already shown (pages shift as new ones arrive). */
+export function prependOlder(current: ChatMessage[], older: ChatMessage[]): ChatMessage[] {
+  const ids = new Set(current.map((m) => m.id));
+  return [...older.filter((m) => !ids.has(m.id)), ...current];
 }

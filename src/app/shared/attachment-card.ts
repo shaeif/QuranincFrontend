@@ -27,7 +27,7 @@ import { verseRef } from '../core/quran/surahs';
         }
       </a>
     } @else {
-      <a class="card" [routerLink]="a.kind === 'reflection' ? ['/reflections', a.ref] : null">
+      <a class="card" [routerLink]="a.kind === 'reflection' ? ['/reflections', a.ref] : a.reflectionId ? ['/reflections', a.reflectionId] : null">
         <span class="kind">
           <ion-icon [name]="a.kind === 'reflection' ? 'chatbubbles-outline' : 'chatbubble-outline'" aria-hidden="true" />
           {{ a.kind === 'reflection' ? 'Reflection' : 'Comment' }}{{ author() ? ' by @' + author() : '' }}

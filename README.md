@@ -72,9 +72,23 @@ The choice is saved on the device and applied before first paint, so there is no
 | New message / share an ayah or reflection / "Message" on a profile | `/messages/new?to=&ayah=&reflection=` | `POST /chats` |
 | Blocked people (Account page), reported messages (Moderation) | `/account`, `/moderation` | `GET /chats/blocks`, `GET·PUT /chats/reports` |
 
-Chats refresh by polling for now (the open chat every 5 s, the list every 15 s, the badge every 30 s, paused in
-the background). `core/chat/chat-sync.service.ts` is the one place to plug in the backend's realtime
-connection: pages listen to its `changed` stream.
+### Realtime
+
+The app keeps one WebSocket open per signed-in user (`core/realtime/realtime.service.ts`) for new messages,
+message requests, unsends, seen receipts, typing, blocks, notifications and moderation reports:
+
+- It signs in with the first message (`{"type":"auth","token":…}`), never in the URL, and sends a fresh access
+  token before the `expires_at` in the server's `ready` reply.
+- It pings every 25 s and reconnects after 1, 2, 5, 10 then 30 s (plus jitter), and straight away when the app
+  comes back to the foreground or the network returns.
+- On close code 4401 it refreshes the session first. On 4429 (more than 10 connections) it stops and polls instead.
+- Events carry ids only, and nothing is replayed, so screens re-fetch after every (re)connect.
+
+While connected, polling pauses (the badges are still re-checked every few minutes in case an event was lost).
+When it isn't, chats fall back to polling: the open chat every 5 s, the list every 15 s, badges every 30 to 60 s,
+all paused in the background. Browsers block `ws://` from an `https://` page, so the realtime URL must be
+`wss://` once the app is served over HTTPS (the app logs a warning and polls if it isn't).
+
 
 ### Sessions
 
@@ -101,6 +115,11 @@ Requests follow the backend's Insomnia export (`scripts/export_insomnia.py`). Wo
   `country_code` and `phone_number`.
 - Roles come from `privilege` on `/user/me`. Resending the verification email needs a login and has no body.
 - Follows are listed per kind (`GET /user/follows?kind=user|ayah|reflection`).
+- Listings return 10 items unless asked: the app asks for 100 (the maximum), pages through whole lists it
+  needs (likes, bookmarks, follows), and loads chat messages 50 at a time with "Load earlier messages".
+- Reflection text arrives as sanitized HTML and is shown as plain text. `created_by_username` and
+  `created_by_profile_picture` are used when present (the dev API has them); otherwise the author is looked up.
+- Picture URLs are relative (`/user/<id>/picture?v=…`) and are prefixed with the API address.
 
 If the backend changes a field, its 400 `details` appear next to the form and name the field.
 
@@ -132,15 +151,17 @@ npm run build      # production build in dist/tadabbur/browser, talks to the pro
 
 ### API address
 
-| Build | File | API |
-|---|---|---|
-| `npm start`, `npm run build:dev` | [`src/environments/environment.ts`](src/environments/environment.ts) | `http://192.168.10.94:8000` (dev stack) |
-| `npm run build` | [`src/environments/environment.prod.ts`](src/environments/environment.prod.ts) | `http://192.168.10.94:5000` (production) |
+| Build | File | API | Realtime |
+|---|---|---|---|
+| `npm start`, `npm run build:dev` | [`src/environments/environment.ts`](src/environments/environment.ts) | `http://192.168.10.94:8000` (dev stack) | `ws://192.168.10.94:8001/ws` |
+| `npm run build` | [`src/environments/environment.prod.ts`](src/environments/environment.prod.ts) | `http://192.168.10.94:5000` (production) | `ws://192.168.10.94:5001/ws` |
 
 The same files set the default Arabic type (`quranTextType: 'quran-uthmani'`, i.e. `GET /quran/quran-uthmani/94`)
 and the translation type (`translationType: 'quran-translation-sahih'`).
 
-The backend's CORS settings must allow the origin the app is served from (for example `http://localhost:8100`).
+The backend allows any origin (CORS), so the app works from `localhost:8100`, the LAN address and Capacitor.
+Verification and password-reset emails link to `<FRONTEND_URL>/verify-email?token=` and `/reset-password?token=`,
+which are this app's routes; set the backend's `FRONTEND_URL` to wherever the app is served.
 
 ### Native apps (later)
 
@@ -160,6 +181,8 @@ src/app/
     auth/       AuthService (session, refresh), interceptor, guards, LibraryService (liked /
                 bookmarked / followed state), NotificationBadgeService
     monitoring/ Sentry setup
+    realtime/   the WebSocket (auth, renewal, ping, reconnect) and its event stream
+    chat/       ChatApi, chat models and parsing, ChatSyncService (realtime or polling)
     quran/      surah metadata (114 surahs), Quran text types, Bismillah handling
     theme/      ThemeService (Pearl / Night / follow phone)
     settings/   reading settings, last-read position

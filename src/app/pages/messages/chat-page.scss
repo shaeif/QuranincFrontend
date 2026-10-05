@@ -21,6 +21,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  .typing {
+    color: var(--tb-teal);
+    font-weight: 600;
+  }
+}
+
+.older {
+  align-self: center;
+  margin-bottom: 4px;
 }
 
 .thread {

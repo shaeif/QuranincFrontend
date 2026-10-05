@@ -28,6 +28,7 @@ export interface Reflection {
   authorId?: string;
   /** Empty when the API sends only created_by_id; UserNamesService looks it up. */
   authorName: string;
+  authorPictureUrl?: string;
   likeCount: number;
   commentCount: number;
   /** Milliseconds since epoch. */
@@ -44,6 +45,7 @@ export interface ReflectionComment {
   text: string;
   authorName: string;
   authorId?: string;
+  authorPictureUrl?: string;
   createdAt?: number;
 }
 

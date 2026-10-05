@@ -94,8 +94,12 @@ export class ReflectionCard {
     return !r.authorName && r.authorId ? this.names.get(r.authorId)() : null;
   });
   protected readonly author = computed(() => this.reflection().authorName || this.resolved()?.username || '');
-  protected readonly handle = computed(() => (this.author() ? '@' + this.author() : 'A member'));
-  protected readonly picture = computed(() => this.resolved()?.pictureUrl);
+  protected readonly handle = computed(() => {
+    const name = this.author();
+    if (name === 'deleted user') return 'Deleted account';
+    return name ? '@' + name : 'A member';
+  });
+  protected readonly picture = computed(() => this.reflection().authorPictureUrl ?? this.resolved()?.pictureUrl);
 
   protected readonly ref = computed(() => verseRef(this.reflection().surah, this.reflection().ayah));
   protected readonly ago = computed(() => timeAgo(this.reflection().createdAt));

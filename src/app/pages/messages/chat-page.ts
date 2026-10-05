@@ -20,8 +20,9 @@ import {
 import { errorMessage } from '../../core/api/api-client';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserNamesService } from '../../core/auth/user-names.service';
-import { ChatApi } from '../../core/chat/chat-api';
+import { ChatApi, MESSAGES_PAGE } from '../../core/chat/chat-api';
 import { Attachment, ChatMessage, ChatReportReason, ChatSummary, Retention } from '../../core/chat/chat-models';
+import { mergeNewest, prependOlder } from '../../core/chat/chat-normalize';
 import { ChatSyncService } from '../../core/chat/chat-sync.service';
 import { getSurah, SURAHS } from '../../core/quran/surahs';
 import { inputValue } from '../../core/util/forms';
@@ -85,6 +86,10 @@ export class ChatPage {
   protected readonly chat = signal<ChatSummary | null>(null);
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly status = signal<'loading' | 'ready' | 'error'>('loading');
+  /** More messages exist before the oldest shown. */
+  protected readonly hasOlder = signal(false);
+  protected readonly loadingOlder = signal(false);
+  private olderPage = 1;
   protected readonly error = signal('');
   protected readonly draft = signal('');
   protected readonly attachment = signal<Attachment | null>(null);
@@ -100,6 +105,7 @@ export class ChatPage {
     return known ?? (c.other.id ? this.names.get(c.other.id)() : null) ?? c.other;
   });
   protected readonly retentionText = computed(() => RETENTION_LABEL[this.chat()?.retention ?? '7d']);
+  protected readonly otherTyping = computed(() => this.sync.typing().has(this.id()));
   protected readonly myMessagesInRequest = computed(() => this.messages().filter((m) => m.mine).length);
   protected readonly canSend = computed(() => {
     const c = this.chat();
@@ -126,6 +132,22 @@ export class ChatPage {
     const destroy = inject(DestroyRef);
     this.sync.pulse(POLL_MS).pipe(takeUntilDestroyed(destroy)).subscribe(() => this.poll());
     this.sync.changed.pipe(takeUntilDestroyed(destroy)).subscribe((chatId) => (!chatId || chatId === this.id()) && this.poll());
+    this.sync.events.pipe(takeUntilDestroyed(destroy)).subscribe((e) => {
+      if (e['chat_id'] !== this.id()) return;
+      if (e.type === 'chat.message_deleted') {
+        this.messages.update((list) => list.filter((m) => m.id !== e['message_id']));
+      } else if (e.type === 'chat.deleted') {
+        this.leave('This chat is no longer available');
+      } else if (e.type === 'chat.declined' || e.type === 'chat.cleared') {
+        // Done on another of your devices.
+        this.leave();
+      }
+    });
+  }
+
+  private leave(message?: string): void {
+    if (message) this.notify.show(message);
+    this.router.navigateByUrl('/messages', { replaceUrl: true });
   }
 
   private load(id: string): void {
@@ -137,6 +159,8 @@ export class ChatPage {
     this.api.messages(id).subscribe({
       next: (page) => {
         this.messages.set(page.items);
+        this.olderPage = 1;
+        this.hasOlder.set(page.page * page.size < page.total);
         this.status.set('ready');
         this.afterNewMessages(true);
       },
@@ -158,17 +182,44 @@ export class ChatPage {
     this.api.messages(id).subscribe({
       next: (page) => {
         const before = this.messages();
+        const merged = mergeNewest(before, page.items, page.page * page.size >= page.total);
         const changed =
-          page.items.length !== before.length ||
-          page.items.some((m, i) => m.id !== before[i]?.id || m.seenAt !== before[i]?.seenAt || m.saved !== before[i]?.saved);
+          merged.length !== before.length ||
+          merged.some((m, i) => m.id !== before[i]?.id || m.seenAt !== before[i]?.seenAt || m.saved !== before[i]?.saved);
         if (!changed) return;
-        const grew = page.items.length > before.length;
-        this.messages.set(page.items);
+        const newest = merged[merged.length - 1]?.id;
+        const grew = !!newest && !before.some((m) => m.id === newest);
+        this.messages.set(merged);
         if (grew) this.afterNewMessages(false);
       },
       error: () => undefined,
     });
     this.api.get(id).subscribe({ next: (c) => this.chat.set(c), error: () => undefined });
+  }
+
+  /** The next page back in time, kept in place on screen. */
+  protected loadOlder(): void {
+    if (this.loadingOlder() || !this.hasOlder()) return;
+    this.loadingOlder.set(true);
+    const page = this.olderPage + 1;
+    this.api.messages(this.id(), page, MESSAGES_PAGE).subscribe({
+      next: (p) => {
+        this.olderPage = page;
+        this.messages.update((list) => prependOlder(list, p.items));
+        this.hasOlder.set(p.page * p.size < p.total);
+        this.loadingOlder.set(false);
+      },
+      error: (err: unknown) => {
+        this.loadingOlder.set(false);
+        this.notify.show(errorMessage(err));
+      },
+    });
+  }
+
+  protected onInput(event: Event): void {
+    const text = inputValue(event);
+    this.draft.set(text);
+    if (text.trim() && this.chat()?.state !== 'request_in') this.sync.typed(this.id());
   }
 
   /** Scroll to the newest and tell the server we've seen the other person's messages. */

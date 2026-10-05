@@ -62,8 +62,8 @@ export class ReflectionApi {
   /** GET /reflection/<id>/comments (public) */
   comments(id: string): Observable<Page<ReflectionComment>> {
     return this.api
-      .get(`/reflection/${encodeURIComponent(id)}/comments`)
-      .pipe(map((raw) => toPage(raw, toComment)));
+      .get(`/reflection/${encodeURIComponent(id)}/comments`, { size: 100 })
+      .pipe(map((raw) => toPage(raw, toComment, 1, 100)));
   }
 
   /** GET /reflection/tags: most used first. */
@@ -133,7 +133,7 @@ export class ReflectionApi {
 
   /** GET /reflection/reports (moderators): open reports, most reported first. */
   reports(): Observable<ReportGroup[]> {
-    return this.api.get('/reflection/reports').pipe(map((raw) => extractArray(raw).map(toReportGroup)));
+    return this.api.get('/reflection/reports', { size: 100 }).pipe(map((raw) => extractArray(raw).map(toReportGroup)));
   }
 
   /** PUT /reflection/<id>/moderation */

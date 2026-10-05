@@ -1,4 +1,5 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import {
   IonBackButton,
@@ -82,9 +83,11 @@ import { ThemeToggle } from '../../shared/theme-toggle';
                       <app-avatar slot="start" [name]="n.actor?.username ?? '?'" [src]="n.actor?.pictureUrl" [size]="38" />
                       <div class="text">
                         <p>
-                          <b>{{ '@' + (n.actor?.username ?? 'someone') }}</b>
-                          @if (n.actorCount > 1) {
-                            and {{ n.actorCount - 1 }} other{{ n.actorCount > 2 ? 's' : '' }}
+                          @if (n.actor) {
+                            <b>{{ '@' + n.actor.username }}</b>
+                            @if (n.actorCount > 1) {
+                              and {{ n.actorCount - 1 }} other{{ n.actorCount > 2 ? 's' : '' }}
+                            }
                           }
                           {{ verb(n) }}
                         </p>
@@ -153,6 +156,9 @@ export class NotificationsPage {
     });
   }
 
+  /** Live: a new notification while this page is open. */
+  private readonly live = this.badge.events.pipe(takeUntilDestroyed()).subscribe(() => this.status() === 'ready' && this.load());
+
   ionViewWillEnter(): void {
     if (this.auth.user()) this.load();
   }
@@ -188,6 +194,14 @@ export class NotificationsPage {
         return `commented on your reflection${where}`;
       case 'follow':
         return 'started following you';
+      case 'followed_comment':
+        return `commented on a reflection you follow${where}`;
+      case 'report':
+        return n.actorCount > 1 ? `${n.actorCount} people reported a reflection${where}` : `A reflection${where} was reported`;
+      case 'auto_hidden':
+        return `A reflection${where} was hidden automatically after reports`;
+      case 'message_report':
+        return 'A message was reported';
       case 'reply':
         return `replied${where}`;
       default:
@@ -196,7 +210,11 @@ export class NotificationsPage {
   }
 
   protected icon(kind: string): string {
-    return kind === 'like' ? 'heart' : kind === 'follow' ? 'person-add-outline' : 'chatbubble-outline';
+    if (kind === 'like') return 'heart';
+    if (kind === 'follow') return 'person-add-outline';
+    if (kind === 'report' || kind === 'message_report') return 'flag-outline';
+    if (kind === 'auto_hidden') return 'eye-off-outline';
+    return 'chatbubble-outline';
   }
 
   protected open(n: AppNotification): void {
@@ -206,7 +224,9 @@ export class NotificationsPage {
       this.badge.unread.set(this.unread());
       this.api.markRead(n.id).subscribe({ error: () => undefined });
     }
-    if (n.reflectionId) this.router.navigate(['/reflections', n.reflectionId]);
+    if (n.kind === 'report' || n.kind === 'auto_hidden' || n.kind === 'message_report') {
+      this.router.navigate(['/moderation'], { queryParams: n.kind === 'message_report' ? { tab: 'messages' } : {} });
+    } else if (n.reflectionId) this.router.navigate(['/reflections', n.reflectionId]);
     else if (n.kind === 'follow' && n.actor?.id) this.router.navigate(['/users', n.actor.id]);
   }
 

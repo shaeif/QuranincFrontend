@@ -6,7 +6,11 @@
         <app-avatar [name]="o.username" [src]="o.pictureUrl" [size]="34" />
         <span>
           <b>{{ o.username ? '@' + o.username : 'Chat' }}</b>
-          <small class="tb-muted">{{ retentionText() }}</small>
+          @if (otherTyping()) {
+            <small class="typing">typing…</small>
+          } @else {
+            <small class="tb-muted">{{ retentionText() }}</small>
+          }
         </span>
       </a>
     }
@@ -26,6 +30,12 @@
           <ion-icon [name]="chat()?.retention === 'keep' ? 'bookmark' : 'time-outline'" aria-hidden="true" />
           {{ retentionText() }}. Tap a message to save it.
         </p>
+
+        @if (hasOlder()) {
+          <ion-button class="older" fill="clear" size="small" [disabled]="loadingOlder()" (click)="loadOlder()">
+            {{ loadingOlder() ? 'Loading…' : 'Load earlier messages' }}
+          </ion-button>
+        }
 
         @for (g of groups(); track g.label) {
           @if (g.label) {
@@ -128,7 +138,7 @@
       placeholder="Message"
       aria-label="Message"
       [value]="draft()"
-      (ionInput)="draft.set(inputValue($event))"
+      (ionInput)="onInput($event)"
       (keydown)="onKey($event)"
     />
     <ion-button type="submit" class="send" [disabled]="sending() || !canSend() || (!draft().trim() && !attachment())" aria-label="Send">
