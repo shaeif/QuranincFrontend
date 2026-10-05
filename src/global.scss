@@ -75,6 +75,18 @@ ion-toolbar ion-title {
   max-width: 760px;
 }
 
+/* Grid items otherwise refuse to shrink below their widest content (long toggle labels). */
+.tb-container > *,
+.tb-form > * {
+  min-width: 0;
+}
+
+/* Long toggle labels wrap instead of pushing the switch off screen. */
+ion-toggle::part(label) {
+  white-space: normal;
+  overflow: visible;
+}
+
 /* ---------- Type ---------- */
 .tb-display {
   font-family: var(--tb-font-display);

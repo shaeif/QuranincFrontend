@@ -13,10 +13,13 @@ import {
   IonInputPasswordToggle,
   IonSpinner,
   IonTitle,
+  IonToggle,
   IonToolbar,
 } from '@ionic/angular';
 import { AccountApi, SignUpForm } from '../../core/api/account-api';
 import { toApiError } from '../../core/api/api-client';
+import { ARABIC_SCRIPTS } from '../../core/quran/quran-texts';
+import { ReadingSettingsService } from '../../core/settings/reading-settings.service';
 import { inputValue, passwordProblem } from '../../core/util/forms';
 import { ThemeToggle } from '../../shared/theme-toggle';
 
@@ -52,6 +55,7 @@ const SERVER_FIELDS: Record<string, Field> = {
     IonInputPasswordToggle,
     IonSpinner,
     IonTitle,
+    IonToggle,
     IonToolbar,
     ThemeToggle,
   ],
@@ -60,7 +64,14 @@ const SERVER_FIELDS: Record<string, Field> = {
 })
 export class SignupPage {
   private readonly api = inject(AccountApi);
+  private readonly reading = inject(ReadingSettingsService);
   protected readonly inputValue = inputValue;
+  protected readonly scripts = ARABIC_SCRIPTS;
+
+  /** How they'd like to read the Quran: saved on this device once the account is created. */
+  protected readonly arabicType = signal(this.reading.arabicType());
+  protected readonly showTranslation = signal(this.reading.showTranslation());
+  protected readonly showTransliteration = signal(this.reading.showTransliteration());
 
   protected readonly form = signal<SignUpForm & { confirm: string }>({
     username: '',
@@ -140,6 +151,9 @@ export class SignupPage {
     this.api.createUser(f).subscribe({
       next: () => {
         this.busy.set(false);
+        this.reading.setArabicType(this.arabicType());
+        this.reading.setShowTranslation(this.showTranslation());
+        this.reading.setShowTransliteration(this.showTransliteration());
         this.done.set(true);
       },
       error: (err: unknown) => {

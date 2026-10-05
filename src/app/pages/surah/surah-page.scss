@@ -32,47 +32,23 @@
   line-height: 1.9;
 }
 
-.controls {
-  display: grid;
-  gap: 8px;
-  padding: 8px 12px 10px;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: var(--tb-glass-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.script {
-  --placeholder-color: var(--tb-muted);
-  font-weight: 600;
-  color: var(--tb-gold);
-}
-
-.extras {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.size {
-  margin-inline-start: auto;
+.display {
+  justify-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  border: 1px solid var(--tb-line);
-  border-radius: var(--tb-radius-field);
-  background: var(--tb-field);
-  padding-inline: 4px;
-}
+  gap: 6px;
+  font-size: 13px;
+  text-decoration: none;
 
-.size-label {
-  font-family: var(--tb-font-quran);
-  font-size: 20px;
-  color: var(--tb-gold);
-  padding-inline: 4px;
+  ion-icon {
+    font-size: 16px;
+    color: var(--tb-gold);
+  }
+
+  .change {
+    color: var(--tb-gold);
+    font-weight: 600;
+  }
 }
 
 .ayahs {

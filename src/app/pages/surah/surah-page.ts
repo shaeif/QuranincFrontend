@@ -10,8 +10,6 @@ import {
   IonIcon,
   IonRouterLink,
   IonRouterLinkWithHref,
-  IonSelect,
-  IonSelectOption,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
@@ -23,10 +21,10 @@ import { QuranApi } from '../../core/api/quran-api';
 import { AuthService } from '../../core/auth/auth.service';
 import { LibraryService } from '../../core/auth/library.service';
 import { BISMILLAH, BISMILLAH_EN, showsBismillah, stripLeadingBismillah } from '../../core/quran/bismillah';
-import { ARABIC_SCRIPTS } from '../../core/quran/quran-texts';
+import { scriptName } from '../../core/quran/quran-texts';
 import { getSurah } from '../../core/quran/surahs';
 import { LastReadService } from '../../core/settings/last-read.service';
-import { ARABIC_SIZE, ReadingSettingsService } from '../../core/settings/reading-settings.service';
+import { ReadingSettingsService } from '../../core/settings/reading-settings.service';
 import { Loadable } from '../../core/util/loadable';
 import { AyahMarker } from '../../shared/ayah-marker';
 import { HeaderActions } from '../../shared/header-actions';
@@ -48,8 +46,6 @@ const SYNC_EVERY_MS = 5000;
     IonIcon,
     IonRouterLink,
     IonRouterLinkWithHref,
-    IonSelect,
-    IonSelectOption,
     IonTitle,
     IonToolbar,
     AyahMarker,
@@ -75,8 +71,16 @@ export class SurahPage {
   private readonly lastRead = inject(LastReadService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly settings = inject(ReadingSettingsService);
-  protected readonly sizes = ARABIC_SIZE;
-  protected readonly scripts = ARABIC_SCRIPTS;
+  /** "Uthmani · English · Transliteration" */
+  protected readonly displaySummary = computed(() =>
+    [
+      scriptName(this.settings.arabicType()),
+      this.settings.showTranslation() ? 'English' : '',
+      this.settings.showTransliteration() ? 'Transliteration' : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  );
 
   private readonly content = viewChild(IonContent);
   private observer?: IntersectionObserver;
@@ -126,14 +130,6 @@ export class SurahPage {
         .pipe(map((list) => list.map((v) => ({ ...v, textAr: stripLeadingBismillah(v.surah, v.ayah, v.textAr) })))),
       () => setTimeout(() => this.trackReading(), 0),
     );
-  }
-
-  protected setScript(value: unknown): void {
-    if (typeof value === 'string') this.settings.setArabicType(value);
-  }
-
-  protected changeSize(delta: number): void {
-    this.settings.setArabicSize(this.settings.arabicSize() + delta * ARABIC_SIZE.step);
   }
 
   /* ---------- Per-ayah actions ---------- */

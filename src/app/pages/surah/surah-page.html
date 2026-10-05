@@ -19,34 +19,12 @@
         }
       </section>
 
-      <!-- Display controls: the Arabic is always shown; English and transliteration are extra lines. -->
-      <div class="controls tb-tile" role="toolbar" aria-label="Reading display">
-        <ion-select class="script" label="Arabic script" labelPlacement="stacked" interface="popover"
-          [value]="settings.arabicType()" (ionChange)="setScript($event.detail.value)">
-          @for (sc of scripts; track sc.type) {
-            <ion-select-option [value]="sc.type">{{ sc.name }}</ion-select-option>
-          }
-        </ion-select>
-        <div class="extras">
-          <ion-button size="small" [fill]="settings.showTranslation() ? 'solid' : 'outline'"
-            (click)="settings.setShowTranslation(!settings.showTranslation())" [attr.aria-pressed]="settings.showTranslation()">
-            <ion-icon slot="start" name="language-outline" />English
-          </ion-button>
-          <ion-button size="small" [fill]="settings.showTransliteration() ? 'solid' : 'outline'"
-            (click)="settings.setShowTransliteration(!settings.showTransliteration())" [attr.aria-pressed]="settings.showTransliteration()">
-            Aa Transliteration
-          </ion-button>
-          <span class="size">
-            <ion-button size="small" fill="clear" (click)="changeSize(-1)" [disabled]="settings.arabicSize() <= sizes.min" aria-label="Smaller Arabic text">
-              <ion-icon slot="icon-only" name="remove-outline" />
-            </ion-button>
-            <span class="size-label" lang="ar">أ</span>
-            <ion-button size="small" fill="clear" (click)="changeSize(1)" [disabled]="settings.arabicSize() >= sizes.max" aria-label="Larger Arabic text">
-              <ion-icon slot="icon-only" name="add-outline" />
-            </ion-button>
-          </span>
-        </div>
-      </div>
+      <!-- What is shown is chosen in Settings; this line just says what it is. -->
+      <a class="display tb-muted" routerLink="/settings" fragment="quran-text">
+        <ion-icon name="options-outline" aria-hidden="true" />
+        <span>{{ displaySummary() }}</span>
+        <span class="change">Change</span>
+      </a>
 
       <!-- Ayahs -->
       @switch (verses.status()) {

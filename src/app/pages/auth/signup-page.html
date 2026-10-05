@@ -95,6 +95,23 @@
             </div>
           </div>
 
+          <fieldset class="reading">
+            <legend>How would you like to read the Quran?</legend>
+            <ion-select label="Arabic script" labelPlacement="floating" fill="outline" interface="popover"
+              [value]="arabicType()" (ionChange)="arabicType.set($event.detail.value)">
+              @for (sc of scripts; track sc.type) {
+                <ion-select-option [value]="sc.type">{{ sc.name }}</ion-select-option>
+              }
+            </ion-select>
+            <ion-toggle [checked]="showTranslation()" (ionChange)="showTranslation.set($event.detail.checked)" justify="space-between">
+              English translation under each ayah
+            </ion-toggle>
+            <ion-toggle [checked]="showTransliteration()" (ionChange)="showTransliteration.set($event.detail.checked)" justify="space-between">
+              Transliteration (Arabic sounds in Latin letters)
+            </ion-toggle>
+            <p class="tb-field-hint">The Arabic is always shown. You can change this any time in Settings.</p>
+          </fieldset>
+
           <ion-input label="Password" labelPlacement="floating" fill="outline" type="password" autocomplete="new-password"
             [maxlength]="128" [value]="form().password" (ionInput)="set('password', $event)">
             <ion-input-password-toggle slot="end" />
