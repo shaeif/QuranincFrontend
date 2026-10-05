@@ -25,16 +25,34 @@ export function timeAgo(ms: number | undefined, now = Date.now()): string {
   return 'just now';
 }
 
-/** "Rabiʻ II 22, 1448 AH" (Umm al-Qura calendar), or '' if the browser lacks it. */
-export function hijriDate(date = new Date()): string {
+const HIJRI_MONTHS = [
+  'Muharram',
+  'Safar',
+  'Rabiʻ I',
+  'Rabiʻ II',
+  'Jumada I',
+  'Jumada II',
+  'Rajab',
+  'Shaʻban',
+  'Ramadan',
+  'Shawwal',
+  'Dhuʻl-Qiʻdah',
+  'Dhuʻl-Hijjah',
+];
+
+/**
+ * "22 Rabiʻ II 1448 AH" (Umm al-Qura calendar), or '' if the browser can't work it out.
+ * Only the numbers come from the browser: some (Android Chrome and Brave) lack the Islamic
+ * calendar's names and print Gregorian ones instead, such as "BC" for the era.
+ */
+export function hijriDate(date = new Date(), format?: Intl.DateTimeFormat): string {
   try {
-    const text = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(date);
-    if (!/\d{4}/.test(text)) return '';
-    return /AH$/.test(text) ? text : `${text} AH`;
+    const fmt = format ?? new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+    if (!fmt.resolvedOptions().calendar.startsWith('islamic')) return '';
+    const part = (type: string) => Number.parseInt(fmt.formatToParts(date).find((p) => p.type === type)?.value ?? '', 10);
+    const [day, month, year] = [part('day'), part('month'), part('year')];
+    if (!(day >= 1 && day <= 30 && month >= 1 && month <= 12 && year >= 1300 && year <= 1700)) return '';
+    return `${day} ${HIJRI_MONTHS[month - 1]} ${year} AH`;
   } catch {
     return '';
   }
