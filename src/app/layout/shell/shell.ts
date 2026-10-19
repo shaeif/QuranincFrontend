@@ -57,23 +57,23 @@ export class Shell {
   /** Sidebar (desktop). */
   protected readonly nav: NavItem[] = [
     { tab: 'home', label: 'Home', icon: 'home' },
+    { tab: 'reflections', label: 'Explore', icon: 'compass' },
     { tab: 'quran', label: 'Quran', icon: 'book' },
-    { tab: 'reflections', label: 'Reflections', icon: 'chatbubbles' },
-    { tab: 'messages', label: 'Messages', icon: 'mail' },
     { tab: 'search', label: 'Search', icon: 'search' },
+    { tab: 'messages', label: 'Messages', icon: 'mail' },
   ];
 
   /** Bottom tabs (phones). Search lives in every header instead. */
   protected readonly tabs: NavItem[] = [
     { tab: 'home', label: 'Home', icon: 'home' },
+    { tab: 'reflections', label: 'Explore', icon: 'compass' },
     { tab: 'quran', label: 'Quran', icon: 'book' },
-    { tab: 'reflections', label: 'Reflections', icon: 'chatbubbles' },
     { tab: 'messages', label: 'Messages', icon: 'mail' },
     { tab: 'you', label: 'You', icon: 'person' },
   ];
 
+  /** Sidebar, signed in. */
   protected readonly mine: NavItem[] = [
-    { tab: 'feed', label: 'Your feed', icon: 'newspaper' },
     { tab: 'bookmarks', label: 'Bookmarks', icon: 'bookmark' },
     { tab: 'reading', label: 'Reading', icon: 'flame' },
   ];

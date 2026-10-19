@@ -43,7 +43,7 @@
                       [attr.aria-pressed]="library.isBookmarked(v.surah, v.ayah)" [attr.aria-label]="'Bookmark ' + v.surah + ':' + v.ayah">
                       <ion-icon slot="icon-only" [name]="library.isBookmarked(v.surah, v.ayah) ? 'bookmark' : 'bookmark-outline'" />
                     </ion-button>
-                    <ion-button size="small" fill="clear" [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }"
+                    <ion-button size="small" fill="clear" [routerLink]="['/ayah', v.surah, v.ayah]"
                       [attr.aria-label]="'Reflections on ' + v.surah + ':' + v.ayah">
                       <ion-icon slot="icon-only" name="chatbubbles-outline" />
                     </ion-button>

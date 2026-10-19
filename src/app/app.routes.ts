@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/guards';
 
 export const routes: Routes = [
@@ -25,8 +26,13 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/surah/surah-page').then((m) => m.SurahPage),
       },
       {
+        path: 'ayah/:surah/:ayah',
+        title: 'Ayah · Tadabbur',
+        loadComponent: () => import('./pages/ayah/ayah-page').then((m) => m.AyahPage),
+      },
+      {
         path: 'reflections',
-        title: 'Reflections · Tadabbur',
+        title: 'Explore · Tadabbur',
         loadComponent: () => import('./pages/reflections/reflections-page').then((m) => m.ReflectionsPage),
       },
       {
@@ -121,11 +127,8 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadComponent: () => import('./pages/account/account-page').then((m) => m.AccountPage),
       },
-      {
-        path: 'feed',
-        title: 'Your feed · Tadabbur',
-        loadComponent: () => import('./pages/library/feed-page').then((m) => m.FeedPage),
-      },
+      // The feed is now the Following tab of the home timeline.
+      { path: 'feed', redirectTo: () => inject(Router).createUrlTree(['/home'], { queryParams: { tab: 'following' } }) },
       {
         path: 'bookmarks',
         title: 'Bookmarks · Tadabbur',

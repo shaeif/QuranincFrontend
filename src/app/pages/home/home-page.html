@@ -12,209 +12,106 @@
     <ion-refresher-content />
   </ion-refresher>
 
-  <div class="tb-container">
-    <!-- Hero: compact for signed-in people, a welcome for visitors -->
-    <section class="hero tb-pattern" [class.compact]="auth.isLoggedIn()">
-      <p class="tb-eyebrow">{{ greeting }}</p>
-      @if (auth.isLoggedIn()) {
-        <h1 class="tb-display">Assalamu alaikum{{ firstName() ? ', ' + firstName() : '' }}</h1>
-      } @else {
-        <h1 class="tb-display">Reflect on every verse</h1>
-        <p class="lede">
-          Read the Quran in Arabic with English, search its meanings, and see what people around the world reflect on.
-        </p>
-      }
-      <p class="dates tb-muted">
-        <ion-icon name="time-outline" aria-hidden="true" />{{ today }}@if (hijri) {<span> · {{ hijri }}</span>}
-      </p>
-      <a class="search-launch" routerLink="/search">
-        <ion-icon name="search-outline" aria-hidden="true" />
-        <span>Search the Quran: <span lang="ar">الصبر</span>, mercy, “light upon light”</span>
-      </a>
-    </section>
+  <div class="tb-columns">
+    <main class="tb-main">
+      <ion-segment class="tb-tabs sticky" mode="md" [value]="tab()" (ionChange)="setTab($event.detail.value)" aria-label="Timeline">
+        <ion-segment-button value="foryou">For you</ion-segment-button>
+        <ion-segment-button value="following">Following</ion-segment-button>
+      </ion-segment>
 
-    <!-- Your day (signed in) -->
-    @if (auth.user()) {
-      <nav class="today" aria-label="Your day">
-        <a class="today-tile tb-tile" routerLink="/reading">
-          <span class="ti" [class.lit]="reading()?.streak?.readToday"><ion-icon [name]="reading()?.streak?.readToday ? 'flame' : 'flame-outline'" /></span>
-          <span><b>{{ reading()?.streak?.current ?? 0 }}-day streak</b><small>{{ reading()?.streak?.readToday ? 'Read today' : 'Read an ayah today' }}</small></span>
+      <!-- Write, or join -->
+      @if (auth.user(); as user) {
+        <a class="composer tb-glass" routerLink="/reflections/new">
+          <app-avatar [name]="user.username" [src]="user.pictureUrl" [size]="40" />
+          <span class="tb-muted">What did an ayah teach you today?</span>
+          <span class="post-btn">Reflect</span>
         </a>
+      } @else if (!auth.isLoggedIn()) {
+        <section class="welcome tb-glass tb-pattern">
+          <h1 class="tb-display">Reflect on every ayah</h1>
+          <p class="tb-muted">
+            Read the Quran in Arabic with English, and see what people around the world take from each ayah. <i>Tadabbur</i> means
+            reflecting on it deeply.
+          </p>
+          <div class="welcome-actions">
+            <ion-button class="tb-glow" routerLink="/signup">Create an account</ion-button>
+            <ion-button fill="outline" routerLink="/login">Log in</ion-button>
+            <ion-button fill="clear" routerLink="/quran/1">Begin with Al-Fatihah</ion-button>
+          </div>
+        </section>
+      }
+
+      <!-- On narrow screens, today's essentials that live in the sidebar on wide ones -->
+      @if (tab() === 'foryou') {
         @if (resume(); as r) {
-          <a class="today-tile tb-tile" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
-            <span class="ti"><ion-icon name="book-outline" /></span>
-            <span><b>Continue</b><small>{{ r.name }} · {{ r.ayah }}</small></span>
+          <a class="continue tb-tile tb-no-aside-only" [routerLink]="['/quran', r.surah]" [queryParams]="{ ayah: r.ayah }">
+            <ion-icon name="book-outline" aria-hidden="true" />
+            <span>Continue reading <b>{{ r.name }} · {{ r.ayah }}</b></span>
+            <ion-icon name="chevron-forward" aria-hidden="true" />
           </a>
         }
-        <a class="today-tile tb-tile" routerLink="/messages">
-          <span class="ti"><ion-icon name="mail-outline" /></span>
-          <span><b>Messages</b><small>{{ chats.badge() ? chats.badge() + ' new' : 'All caught up' }}</small></span>
-          @if (chats.badge()) { <span class="dot" aria-hidden="true"></span> }
-        </a>
-        <a class="today-tile tb-tile" routerLink="/notifications">
-          <span class="ti"><ion-icon name="notifications-outline" /></span>
-          <span><b>Activity</b><small>{{ notes.unread() ? notes.unread() + ' unread' : 'Nothing new' }}</small></span>
-          @if (notes.unread()) { <span class="dot" aria-hidden="true"></span> }
-        </a>
-      </nav>
-    }
-
-    <!-- Verse of the day -->
-    <section class="tb-section" aria-labelledby="votd-title">
-      @switch (votd.status()) {
-        @case ('ready') {
-          @let v = verse()!;
-          <article class="votd tb-glass">
-            <div class="votd-head">
-              <p class="tb-eyebrow" id="votd-title"><ion-icon name="sparkles-outline" aria-hidden="true" /> Verse of the day</p>
-              <ion-button fill="clear" size="small" (click)="shareVerse()" aria-label="Share this verse">
-                <ion-icon slot="icon-only" name="share-social-outline" />
-              </ion-button>
-            </div>
-            <p class="votd-ar tb-quran" lang="ar">{{ v.textAr }}<app-ayah-marker [number]="v.ayah" /></p>
-            @if (v.translation) {
-              <p class="votd-en">{{ v.translation }}</p>
-            }
-            <p class="votd-ref">{{ verseSurah()?.name }} · {{ verseSurah()?.meaning }} · {{ v.surah }}:{{ v.ayah }}</p>
-            <div class="votd-actions">
-              <ion-button class="tb-glow" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
-                Read in context <ion-icon slot="end" name="arrow-forward" />
-              </ion-button>
-              <ion-button fill="outline" [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }">
-                Reflections ({{ votd.data()!.reflections.total }})
-              </ion-button>
-            </div>
-          </article>
-        }
-        @case ('error') {
-          <app-state-view state="error" [message]="votd.error()" (retry)="loadVerse()" />
-        }
-        @default {
-          <app-state-view state="loading" [rows]="1" />
+        @if (votd.status() === 'ready') {
+          @let v = votd.data()!;
+          <section class="votd tb-glass tb-no-aside-only" aria-labelledby="votd-title">
+            <p class="tb-eyebrow" id="votd-title"><ion-icon name="sparkles-outline" aria-hidden="true" /> Verse of the day</p>
+            <app-ayah-quote [surah]="v.verse.surah" [ayah]="v.verse.ayah" [clamp]="false" />
+            <a class="votd-more" [routerLink]="['/ayah', v.verse.surah, v.verse.ayah]">
+              {{ v.reflections.total ? 'See ' + v.reflections.total + ' reflections' : 'Be the first to reflect on it' }}
+              <ion-icon name="arrow-forward" aria-hidden="true" />
+            </a>
+          </section>
         }
       }
-    </section>
 
-    <!-- Quick actions (visitors) -->
-    @if (!auth.isLoggedIn()) {
-    <nav class="quick" aria-label="Start here">
-      @if (continueSurah(); as s) {
-        <a class="quick-tile tb-tile tb-hover continue" [routerLink]="['/quran', s.number]" [queryParams]="{ ayah: lastRead.position()!.ayah }">
-          <app-star-number [value]="s.number" />
-          <span><b>Continue reading</b><small>{{ s.name }} · ayah {{ lastRead.position()!.ayah }}</small></span>
-        </a>
-      }
-      <a class="quick-tile tb-tile" routerLink="/quran">
-        <span class="qi"><ion-icon name="book-outline" /></span>
-        <span><b>Read</b><small>All {{ surahCount }} surahs</small></span>
-      </a>
-      <a class="quick-tile tb-tile" routerLink="/search">
-        <span class="qi"><ion-icon name="search-outline" /></span>
-        <span><b>Search</b><small>Arabic or English</small></span>
-      </a>
-      <a class="quick-tile tb-tile" routerLink="/reflections">
-        <span class="qi"><ion-icon name="chatbubbles-outline" /></span>
-        <span><b>Reflections</b><small>From the community</small></span>
-      </a>
-    </nav>
-    }
-
-    <!-- For curious visitors -->
-    @if (!auth.isLoggedIn()) {
-    <section class="curious tb-glass" aria-labelledby="curious-title">
-      <div class="curious-text">
-        <p class="tb-eyebrow">New to the Quran?</p>
-        <h2 class="tb-display" id="curious-title">A book that asks to be pondered</h2>
-        <p class="tb-muted">
-          Muslims believe the Quran is the word of God, revealed to the Prophet Muhammad (peace be upon him) over 23 years. <i>Tadabbur</i> means
-          reflecting on it deeply, verse by verse. You don't need an account to start.
-        </p>
-        <ion-button fill="outline" routerLink="/quran/1">Begin with Al-Fatihah, the Opening</ion-button>
-      </div>
-      <dl class="facts">
-        <div><dt>{{ surahCount }}</dt><dd>surahs (chapters)</dd></div>
-        <div><dt>{{ ayahCount }}</dt><dd>ayahs (verses)</dd></div>
-        <div><dt>23</dt><dd>years of revelation</dd></div>
-      </dl>
-    </section>
-    }
-
-    <!-- Reflections on today's verse -->
-    @if (votd.status() === 'ready') {
-      @let v = verse()!;
-      <section class="tb-section" aria-labelledby="refl-title">
-        <div class="tb-section-head">
-          <h2 id="refl-title">Reflections on this verse</h2>
-          @if (votd.data()!.reflections.total > 0) {
-            <a [routerLink]="['/reflections']" [queryParams]="{ surah: v.surah, ayah: v.ayah }">See all</a>
-          }
-        </div>
-        @for (r of votd.data()!.reflections.items; track r.id) {
-          <app-reflection-card [reflection]="r" />
-        } @empty {
-          <app-state-view state="empty" message="No one has shared a reflection on this verse yet." />
-        }
-      </section>
-    }
-
-    <!-- Most-liked verses -->
-    <section class="tb-section" aria-labelledby="liked-title">
-      <div class="tb-section-head">
-        <h2 id="liked-title">Most-loved verses</h2>
-      </div>
-      @switch (mostLiked.status()) {
-        @case ('ready') {
-          <ol class="liked">
-            @for (v of mostLiked.data()!.items; track v.surah + ':' + v.ayah) {
-              <li>
-                <a class="liked-item tb-tile" [routerLink]="['/quran', v.surah]" [queryParams]="{ ayah: v.ayah }">
-                  <span class="liked-ar tb-quran" lang="ar">{{ v.textAr }}</span>
-                  @if (v.translation) {
-                    <span class="liked-en">{{ v.translation }}</span>
+      <!-- Timeline -->
+      @if (tab() === 'following' && !auth.isLoggedIn()) {
+        <app-auth-prompt title="Your own timeline" message="Follow people and ayahs, and their new reflections gather here." next="/home?tab=following" />
+      } @else {
+        <section class="tb-timeline" aria-live="polite" [attr.aria-busy]="status() === 'loading'">
+          @switch (status()) {
+            @case ('ready') {
+              @for (p of posts(); track p.reflection.id) {
+                <div class="item">
+                  @if (p.because.length) {
+                    <p class="because tb-muted"><ion-icon name="sparkles-outline" aria-hidden="true" /> Because of {{ because(p.because) }}</p>
                   }
-                  <span class="liked-meta">
-                    <span>{{ verseRef(v.surah, v.ayah) }}</span>
-                    <span class="likes"><ion-icon name="heart" aria-hidden="true" /> {{ v.likeCount }}</span>
-                  </span>
-                </a>
-              </li>
-            } @empty {
-              <app-state-view state="empty" message="Verses people love will appear here." />
+                  <app-reflection-card [reflection]="p.reflection" (changed)="updated($event)" />
+                </div>
+              } @empty {
+                @if (tab() === 'following') {
+                  <app-state-view state="empty" message="Nothing here yet. Follow people from their profile, or an ayah from its page, to fill your timeline.">
+                    <ion-button fill="outline" routerLink="/reflections">Explore reflections</ion-button>
+                  </app-state-view>
+                } @else {
+                  <app-state-view state="empty" message="No reflections yet. Be the first to share one.">
+                    <ion-button fill="outline" routerLink="/reflections/new">Write a reflection</ion-button>
+                  </app-state-view>
+                }
+              }
             }
-          </ol>
-        }
-        @case ('error') {
-          <app-state-view state="error" [message]="mostLiked.error()" (retry)="loadMostLiked()" />
-        }
-        @default {
-          <app-state-view state="loading" [rows]="2" />
-        }
+            @case ('error') {
+              <app-state-view state="error" [message]="error()" (retry)="reload()" />
+            }
+            @default {
+              <app-state-view state="loading" [rows]="3" />
+            }
+          }
+        </section>
       }
-    </section>
+    </main>
 
-    <!-- Join, or write -->
-    @if (auth.isLoggedIn()) {
-      <section class="join tb-pattern tb-tile">
-        <div>
-          <h2 class="tb-display">What did a verse teach you today?</h2>
-          <p class="tb-muted">Share a reflection. Others can learn from it, and you can follow the verses and people that move you.</p>
-        </div>
-        <div class="join-actions">
-          <ion-button class="tb-glow" routerLink="/reflections/new"><ion-icon slot="start" name="create-outline" />Write a reflection</ion-button>
-          <ion-button fill="outline" routerLink="/feed">Your feed</ion-button>
-        </div>
-      </section>
-    } @else {
-      <section class="join tb-pattern tb-tile">
-        <div>
-          <h2 class="tb-display">Keep your reflections in one place</h2>
-          <p class="tb-muted">With an account you can post reflections, like and comment, bookmark verses and keep a reading streak.</p>
-        </div>
-        <div class="join-actions">
-          <ion-button class="tb-glow" routerLink="/signup">Create an account</ion-button>
-          <ion-button fill="clear" routerLink="/login">Log in</ion-button>
-        </div>
-      </section>
-    }
+    <app-side-column />
   </div>
+
+  <ion-infinite-scroll (ionInfinite)="loadMore($event)" [disabled]="status() !== 'ready' || !hasMore()">
+    <ion-infinite-scroll-content loadingText="Loading more" />
+  </ion-infinite-scroll>
+
+  @if (auth.isLoggedIn()) {
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="fab">
+      <ion-fab-button routerLink="/reflections/new" aria-label="Write a reflection" title="Write a reflection">
+        <ion-icon name="create-outline" />
+      </ion-fab-button>
+    </ion-fab>
+  }
 </ion-content>

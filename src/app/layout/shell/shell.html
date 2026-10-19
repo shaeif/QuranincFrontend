@@ -17,6 +17,25 @@
               </a>
             </li>
           }
+          @if (auth.isLoggedIn()) {
+            <li>
+              <a routerLink="/notifications" routerLinkActive="active" routerDirection="root" class="rail-link">
+                <ion-icon name="notifications-outline" aria-hidden="true" />
+                <span>Notifications</span>
+                @if (badge.unread()) {
+                  <span class="rail-count">{{ badge.unread() }}</span>
+                }
+              </a>
+            </li>
+            @for (item of mine; track item.tab) {
+              <li>
+                <a [routerLink]="'/' + item.tab" routerLinkActive="active" routerDirection="root" class="rail-link">
+                  <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          }
           <li>
             <a routerLink="/settings" routerLinkActive="active" routerDirection="root" class="rail-link">
               <ion-icon name="settings-outline" aria-hidden="true" />
@@ -26,31 +45,9 @@
         </ul>
 
         @if (auth.isLoggedIn()) {
-          <div class="rail-group">
-            <p class="tb-eyebrow">Your space</p>
-            <ul class="rail-nav">
-              <li>
-                <a routerLink="/notifications" routerLinkActive="active" routerDirection="root" class="rail-link">
-                  <ion-icon name="notifications-outline" aria-hidden="true" />
-                  <span>Notifications</span>
-                  @if (badge.unread()) {
-                    <span class="rail-count">{{ badge.unread() }}</span>
-                  }
-                </a>
-              </li>
-              @for (item of mine; track item.tab) {
-                <li>
-                  <a [routerLink]="'/' + item.tab" routerLinkActive="active" routerDirection="root" class="rail-link">
-                    <ion-icon [name]="item.icon + '-outline'" aria-hidden="true" />
-                    <span>{{ item.label }}</span>
-                  </a>
-                </li>
-              }
-            </ul>
-            <a routerLink="/reflections/new" class="rail-write">
-              <ion-icon name="create-outline" aria-hidden="true" /> Write a reflection
-            </a>
-          </div>
+          <a routerLink="/reflections/new" class="rail-write">
+            <ion-icon name="create-outline" aria-hidden="true" /> Reflect
+          </a>
         }
 
         <div class="rail-foot">

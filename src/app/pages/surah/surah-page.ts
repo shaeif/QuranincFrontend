@@ -172,7 +172,7 @@ export class SurahPage {
         }
         break;
       case 'read':
-        this.router.navigate(['/reflections'], { queryParams: { surah: v.surah, ayah: v.ayah } });
+        this.router.navigate(['/ayah', v.surah, v.ayah]);
         break;
       case 'message':
         if (this.auth.requireLogin(`/messages/new?ayah=${v.surah}:${v.ayah}`)) {

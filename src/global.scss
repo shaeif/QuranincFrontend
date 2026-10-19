@@ -433,3 +433,87 @@ ion-fab-button {
   --color: #10141f;
   --box-shadow: var(--tb-glow);
 }
+
+/* ---------- Timeline ---------- */
+/* Posts as rows between hairlines in one surface, like a social timeline. */
+.tb-timeline {
+  --tb-post-bg: transparent;
+  --tb-post-border: 0;
+  --tb-post-radius: 0;
+  --tb-post-hover: var(--tb-field);
+  display: grid;
+  background: var(--tb-glass);
+  border: 1px solid var(--tb-glass-line);
+  border-radius: var(--tb-radius-card);
+  overflow: hidden;
+
+  > * + * {
+    border-top: 1px solid var(--tb-line);
+  }
+
+  > app-state-view {
+    padding: 12px;
+  }
+}
+
+/* Main column plus a sticky right sidebar from 1200px. */
+.tb-columns {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  display: grid;
+  gap: 28px;
+  align-items: start;
+
+  @media (min-width: 768px) {
+    padding: 24px 32px 56px;
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: minmax(0, 640px) 320px;
+    justify-content: center;
+  }
+}
+
+.tb-main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.tb-aside {
+  display: none;
+
+  @media (min-width: 1200px) {
+    display: grid;
+    position: sticky;
+    top: 16px;
+  }
+}
+
+/* Shown only while the sidebar is hidden (its content lives there on wide screens). */
+@media (min-width: 1200px) {
+  .tb-no-aside-only {
+    display: none !important;
+  }
+}
+
+/* Underlined tabs ("For you", "Following"). */
+ion-segment.tb-tabs {
+  --background: transparent;
+  border-bottom: 1px solid var(--tb-line);
+  border-radius: 0;
+
+  ion-segment-button {
+    --indicator-color: var(--tb-gold);
+    --indicator-height: 3px;
+    --color: var(--tb-muted);
+    --color-checked: var(--tb-fg);
+    --border-radius: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 700;
+    font-size: 15px;
+    min-height: 48px;
+  }
+}

@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, OnInit, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   InfiniteScrollCustomEvent,
   IonButtons,
@@ -27,6 +27,7 @@ import { ReflectionApi, TagCloud } from '../../core/api/reflection-api';
 import { getSurah } from '../../core/quran/surahs';
 import { LoadStatus, Loadable } from '../../core/util/loadable';
 import { ReflectionCard } from '../../shared/reflection-card';
+import { SideColumn } from '../../shared/side-column';
 import { StateView } from '../../shared/state-view';
 import { HeaderActions } from '../../shared/header-actions';
 
@@ -59,6 +60,7 @@ interface Filter {
     IonTitle,
     IonToolbar,
     ReflectionCard,
+    SideColumn,
     StateView,
     HeaderActions,
   ],
@@ -71,6 +73,7 @@ export class ReflectionsPage implements OnInit {
   readonly tagParam = input<string | undefined>(undefined, { alias: 'tag' });
 
   private readonly api = inject(ReflectionApi);
+  private readonly router = inject(Router);
   private sub?: Subscription;
   private page = 1;
 
@@ -96,7 +99,7 @@ export class ReflectionsPage implements OnInit {
     const s = getSurah(f.surah ?? 0);
     if (s && f.ayah) return `On ${s.name} ${s.number}:${f.ayah}`;
     if (s) return `On ${s.name}`;
-    return 'Community reflections';
+    return 'Explore reflections';
   });
 
   protected readonly writeParams = computed(() => {
@@ -109,9 +112,13 @@ export class ReflectionsPage implements OnInit {
 
   constructor() {
     effect(() => {
-      this.filter();
+      const f = this.filter();
       this.sort();
-      untracked(() => this.reload());
+      untracked(() => {
+        // One ayah's reflections have their own page now.
+        if (f.surah && f.ayah) this.router.navigate(['/ayah', f.surah, f.ayah], { replaceUrl: true });
+        else this.reload();
+      });
     });
   }
 
@@ -163,6 +170,11 @@ export class ReflectionsPage implements OnInit {
       },
       error: () => event.target.complete(),
     });
+  }
+
+  /** Keeps the list in step with likes and bookmarks made on a card. */
+  protected updated(r: Reflection): void {
+    this.items.update((list) => list.map((x) => (x.id === r.id ? r : x)));
   }
 
   private source(page: number): Observable<Page<Reflection>> {

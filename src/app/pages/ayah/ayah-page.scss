@@ -1,0 +1,65 @@
+.ayah {
+  padding: 18px 20px 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.step {
+  display: flex;
+  margin-inline-end: -8px;
+
+  ion-button {
+    --color: var(--tb-gold);
+  }
+}
+
+.ar {
+  margin: 0;
+  line-height: 2.2;
+}
+
+.en {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--tb-line);
+}
+
+.icons {
+  display: inline-flex;
+  margin-inline-start: auto;
+
+  ion-button {
+    --color: var(--tb-muted);
+  }
+
+  ion-button.on {
+    --color: var(--tb-gold);
+  }
+}
+
+.replies {
+  display: grid;
+  gap: 12px;
+}
+
+.count {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}

@@ -18,7 +18,7 @@ import {
 } from '@ionic/angular';
 import { AccountApi } from '../../core/api/account-api';
 import { errorMessage } from '../../core/api/api-client';
-import { AuthorPage as AuthorData, ReflectionSort } from '../../core/api/models';
+import { AuthorPage as AuthorData, Reflection, ReflectionSort } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { LibraryService } from '../../core/auth/library.service';
 import { UserNamesService } from '../../core/auth/user-names.service';
@@ -27,6 +27,7 @@ import { Avatar } from '../../shared/avatar';
 import { HeaderActions } from '../../shared/header-actions';
 import { NotifyService } from '../../shared/notify.service';
 import { ReflectionCard } from '../../shared/reflection-card';
+import { SideColumn } from '../../shared/side-column';
 import { StateView } from '../../shared/state-view';
 
 /** GET /user/<id>/reflections: someone's reflections, stats and a follow button. */
@@ -50,70 +51,82 @@ import { StateView } from '../../shared/state-view';
     Avatar,
     HeaderActions,
     ReflectionCard,
+    SideColumn,
     StateView,
   ],
   template: `
     <ion-header class="ion-no-border tb-header">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/reflections" text="" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
         <ion-title>{{ page.data() ? '@' + page.data()!.author.username : 'Profile' }}</ion-title>
         <ion-buttons slot="end"><app-header-actions /></ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content class="tb-content">
-      <div class="tb-container tb-container--narrow">
-        @switch (page.status()) {
-          @case ('ready') {
-            @let d = page.data()!;
-            <section class="head tb-glass tb-pattern">
-              <app-avatar [name]="d.author.username" [src]="d.author.pictureUrl" [size]="84" />
-              <h1 class="tb-display">{{ '@' + d.author.username }}</h1>
-              @if (d.author.deleted) {
-                <p class="tb-muted">This account has been deleted.</p>
-              }
-              <dl class="stats">
-                <div><dt>{{ d.stats.reflections }}</dt><dd>reflections</dd></div>
-                <div><dt>{{ d.stats.likesReceived }}</dt><dd>likes received</dd></div>
-                <div><dt>{{ followers() }}</dt><dd>followers</dd></div>
-                @if (d.stats.following !== null) {
-                  <div><dt>{{ d.stats.following }}</dt><dd>following</dd></div>
+      <div class="tb-columns">
+        <main class="tb-main">
+          @switch (page.status()) {
+            @case ('ready') {
+              @let d = page.data()!;
+              <section class="profile tb-glass">
+                <div class="banner tb-pattern" aria-hidden="true"></div>
+                <div class="top">
+                  <app-avatar class="pic" [name]="d.author.username" [src]="d.author.pictureUrl" [size]="96" />
+                  @if (isMe()) {
+                    <div class="actions">
+                      <ion-button fill="outline" size="small" routerLink="/account">Edit profile</ion-button>
+                    </div>
+                  } @else if (!d.author.deleted) {
+                    <div class="actions">
+                      <ion-button fill="outline" size="small" (click)="message()" aria-label="Message" title="Message">
+                        <ion-icon slot="icon-only" name="mail-outline" />
+                      </ion-button>
+                      <ion-button size="small" [fill]="following() ? 'outline' : 'solid'" [class.tb-glow]="!following()" (click)="toggleFollow()" [disabled]="busy()">
+                        {{ following() ? 'Following' : 'Follow' }}
+                      </ion-button>
+                    </div>
+                  }
+                </div>
+                <div class="who">
+                  <h1>{{ '@' + d.author.username }}</h1>
+                  @if (d.author.deleted) {
+                    <p class="tb-muted">This account has been deleted.</p>
+                  }
+                </div>
+                <dl class="stats">
+                  @if (d.stats.following !== null) {
+                    <div><dt>{{ d.stats.following }}</dt><dd>Following</dd></div>
+                  }
+                  <div><dt>{{ followers() }}</dt><dd>{{ followers() === 1 ? 'Follower' : 'Followers' }}</dd></div>
+                  <div><dt>{{ d.stats.reflections }}</dt><dd>{{ d.stats.reflections === 1 ? 'Reflection' : 'Reflections' }}</dd></div>
+                  <div><dt>{{ d.stats.likesReceived }}</dt><dd>Likes</dd></div>
+                </dl>
+              </section>
+
+              <ion-segment class="tb-tabs" mode="md" [value]="sort()" (ionChange)="setSort($event.detail.value)" aria-label="Order">
+                <ion-segment-button value="newest">Latest</ion-segment-button>
+                <ion-segment-button value="likes">Top</ion-segment-button>
+                <ion-segment-button value="comments">Discussed</ion-segment-button>
+              </ion-segment>
+
+              <div class="tb-timeline">
+                @for (r of d.reflections.items; track r.id) {
+                  <app-reflection-card [reflection]="r" (changed)="updated($event)" />
+                } @empty {
+                  <app-state-view state="empty" [message]="emptyText()">
+                    @if (isMe()) {
+                      <ion-button fill="outline" routerLink="/reflections/new">Write a reflection</ion-button>
+                    }
+                  </app-state-view>
                 }
-              </dl>
-              @if (isMe()) {
-                <div class="actions">
-                  <ion-button fill="outline" routerLink="/account">Edit profile</ion-button>
-                  <ion-button class="tb-glow" routerLink="/reflections/new"><ion-icon slot="start" name="create-outline" />Write</ion-button>
-                </div>
-              } @else if (!d.author.deleted) {
-                <div class="actions">
-                  <ion-button [fill]="following() ? 'outline' : 'solid'" [class.tb-glow]="!following()" (click)="toggleFollow()" [disabled]="busy()">
-                    <ion-icon slot="start" [name]="following() ? 'checkmark' : 'person-add-outline'" />
-                    {{ following() ? 'Following' : 'Follow' }}
-                  </ion-button>
-                  <ion-button fill="outline" (click)="message()">
-                    <ion-icon slot="start" name="mail-outline" />Message
-                  </ion-button>
-                </div>
-              }
-            </section>
-
-            <ion-segment class="tb-segment" [value]="sort()" (ionChange)="setSort($event.detail.value)">
-              <ion-segment-button value="newest">Newest</ion-segment-button>
-              <ion-segment-button value="likes">Most liked</ion-segment-button>
-              <ion-segment-button value="comments">Discussed</ion-segment-button>
-            </ion-segment>
-
-            <div class="list">
-              @for (r of d.reflections.items; track r.id) {
-                <app-reflection-card [reflection]="r" />
-              } @empty {
-                <app-state-view state="empty" [message]="emptyText()" />
-              }
-            </div>
+              </div>
+            }
+            @case ('error') { <app-state-view state="error" [message]="page.error()" (retry)="load()" /> }
+            @default { <app-state-view state="loading" [rows]="2" /> }
           }
-          @case ('error') { <app-state-view state="error" [message]="page.error()" (retry)="load()" /> }
-          @default { <app-state-view state="loading" [rows]="2" /> }
-        }
+        </main>
+
+        <app-side-column />
       </div>
       <ion-infinite-scroll (ionInfinite)="more($event)" [disabled]="!hasMore()">
         <ion-infinite-scroll-content />
@@ -121,15 +134,18 @@ import { StateView } from '../../shared/state-view';
     </ion-content>
   `,
   styles: `
-    .head { padding: 26px 20px; display: grid; justify-items: center; gap: 10px; text-align: center; }
-    h1 { font-size: calc(28px * var(--tb-display-scale)); }
-    .head p { margin: 0; }
-    .stats { margin: 4px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; }
-    .stats div { display: grid; }
-    .stats dt { font-size: 22px; font-weight: 300; color: var(--tb-gold); font-variant-numeric: tabular-nums; }
-    .stats dd { margin: 0; font-size: 12px; color: var(--tb-muted); }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-    .list { display: grid; gap: 12px; }
+    .profile { overflow: hidden; padding: 0 0 14px; display: grid; }
+    .banner { height: 120px; background: var(--tb-accent-gradient); opacity: .55; }
+    .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 0 16px; margin-top: -48px; }
+    .pic { box-shadow: 0 0 0 4px var(--tb-bg); }
+    .actions { display: flex; gap: 8px; padding-bottom: 4px; }
+    .who { padding: 10px 16px 0; display: grid; gap: 2px; }
+    h1 { margin: 0; font-size: 21px; font-weight: 800; overflow-wrap: anywhere; }
+    .who p { margin: 0; font-size: 14px; }
+    .stats { margin: 12px 0 0; padding: 0 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+    .stats div { display: flex; gap: 4px; align-items: baseline; }
+    .stats dt { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stats dd { margin: 0; font-size: 14px; color: var(--tb-muted); }
   `,
 })
 export class AuthorPage {
@@ -193,6 +209,13 @@ export class AuthorPage {
       },
       error: () => e.target.complete(),
     });
+  }
+
+  /** Keeps the list in step with likes and bookmarks made on a card. */
+  protected updated(r: Reflection): void {
+    this.page.data.update((d) =>
+      d ? { ...d, reflections: { ...d.reflections, items: d.reflections.items.map((x) => (x.id === r.id ? r : x)) } } : d,
+    );
   }
 
   protected message(): void {

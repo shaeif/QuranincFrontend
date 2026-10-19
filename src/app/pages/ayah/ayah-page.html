@@ -1,0 +1,122 @@
+<ion-header class="ion-no-border tb-header">
+  <ion-toolbar>
+    <ion-buttons slot="start"><ion-back-button defaultHref="/home" text="" /></ion-buttons>
+    <ion-title>{{ ayah() ? ref() : 'Ayah' }}</ion-title>
+    <ion-buttons slot="end"><app-header-actions /></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tb-content">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content />
+  </ion-refresher>
+
+  <div class="tb-columns">
+    <main class="tb-main">
+      @if (!ayah()) {
+        <app-state-view state="empty" message="There is no such ayah.">
+          <ion-button fill="outline" routerLink="/quran">Open the Quran</ion-button>
+        </app-state-view>
+      } @else {
+        @let s = surah()!;
+        <!-- The ayah -->
+        <article class="ayah tb-glass tb-pattern" aria-labelledby="ayah-ref">
+          <header class="head">
+            <p class="tb-eyebrow" id="ayah-ref">{{ s.name }} · {{ s.meaning }} · {{ s.number }}:{{ ayah() }}</p>
+            <nav class="step" aria-label="Neighbouring ayahs">
+              <ion-button fill="clear" size="small" [routerLink]="['/ayah', s.number, prev()]" [disabled]="!prev()"
+                aria-label="Previous ayah" title="Previous ayah">
+                <ion-icon slot="icon-only" name="chevron-back" />
+              </ion-button>
+              <ion-button fill="clear" size="small" [routerLink]="['/ayah', s.number, next()]" [disabled]="!next()"
+                aria-label="Next ayah" title="Next ayah">
+                <ion-icon slot="icon-only" name="chevron-forward" />
+              </ion-button>
+            </nav>
+          </header>
+
+          @switch (textStatus()) {
+            @case ('ready') {
+              <p class="ar tb-quran" lang="ar" [style.font-size.px]="settings.arabicSize()">
+                {{ arabic() }}<app-ayah-marker [number]="ayah()" />
+              </p>
+              @if (english()) {
+                <p class="en">{{ english() }}</p>
+              }
+            }
+            @case ('error') {
+              <p class="tb-muted">The text of this ayah couldn't be loaded.</p>
+            }
+            @default {
+              <ion-skeleton-text [animated]="true" style="width: 90%; height: 28px; margin-inline-start: auto" />
+              <ion-skeleton-text [animated]="true" style="width: 70%" />
+            }
+          }
+
+          <footer class="actions" role="group" aria-label="Ayah actions">
+            <ion-button class="tb-glow" size="small" routerLink="/reflections/new" [queryParams]="{ surah: s.number, ayah: ayah() }">
+              <ion-icon slot="start" name="create-outline" />Reflect
+            </ion-button>
+            <ion-button fill="outline" size="small" (click)="toggleFollow()" [attr.aria-pressed]="followed()">
+              <ion-icon slot="start" [name]="followed() ? 'notifications' : 'notifications-outline'" />{{ followed() ? 'Following' : 'Follow' }}
+            </ion-button>
+            <span class="icons">
+              <ion-button fill="clear" size="small" [class.on]="liked()" (click)="toggleLike()" [attr.aria-pressed]="liked()" aria-label="Like" title="Like">
+                <ion-icon slot="icon-only" [name]="liked() ? 'heart' : 'heart-outline'" />
+              </ion-button>
+              <ion-button fill="clear" size="small" [class.on]="bookmarked()" (click)="toggleBookmark()" [attr.aria-pressed]="bookmarked()"
+                [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Bookmark'" [title]="bookmarked() ? 'Remove bookmark' : 'Bookmark'">
+                <ion-icon slot="icon-only" [name]="bookmarked() ? 'bookmark' : 'bookmark-outline'" />
+              </ion-button>
+              <ion-button fill="clear" size="small" (click)="share()" aria-label="Share" title="Share">
+                <ion-icon slot="icon-only" name="share-social-outline" />
+              </ion-button>
+              <ion-button fill="clear" size="small" [routerLink]="['/quran', s.number]" [queryParams]="{ ayah: ayah() }"
+                aria-label="Read in context" title="Read in context">
+                <ion-icon slot="icon-only" name="book-outline" />
+              </ion-button>
+            </span>
+          </footer>
+        </article>
+
+        <!-- Reflections on it -->
+        <section class="replies" aria-labelledby="refl-title">
+          <h2 id="refl-title" class="count">
+            {{ status() === 'ready' ? total() : '' }} {{ status() === 'ready' && total() === 1 ? 'reflection' : 'reflections' }}
+          </h2>
+          <ion-segment class="tb-tabs" mode="md" [value]="sort()" (ionChange)="setSort($event.detail.value)" aria-label="Order">
+            <ion-segment-button value="likes">Top</ion-segment-button>
+            <ion-segment-button value="newest">Latest</ion-segment-button>
+            <ion-segment-button value="comments">Discussed</ion-segment-button>
+          </ion-segment>
+
+          <div class="tb-timeline" aria-live="polite">
+            @switch (status()) {
+              @case ('ready') {
+                @for (r of items(); track r.id) {
+                  <app-reflection-card [reflection]="r" [showAyah]="false" (changed)="updated($event)" />
+                } @empty {
+                  <app-state-view state="empty" message="No one has reflected on this ayah yet. What does it say to you?">
+                    <ion-button fill="outline" routerLink="/reflections/new" [queryParams]="{ surah: s.number, ayah: ayah() }">Write the first reflection</ion-button>
+                  </app-state-view>
+                }
+              }
+              @case ('error') {
+                <app-state-view state="error" [message]="error()" (retry)="reload()" />
+              }
+              @default {
+                <app-state-view state="loading" [rows]="2" />
+              }
+            }
+          </div>
+        </section>
+      }
+    </main>
+
+    <app-side-column />
+  </div>
+
+  <ion-infinite-scroll (ionInfinite)="loadMore($event)" [disabled]="status() !== 'ready' || !hasMore()">
+    <ion-infinite-scroll-content loadingText="Loading more reflections" />
+  </ion-infinite-scroll>
+</ion-content>

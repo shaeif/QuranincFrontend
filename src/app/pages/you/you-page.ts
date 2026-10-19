@@ -61,7 +61,7 @@ export class YouPage {
 
   protected readonly tiles: Tile[] = [
     { link: '/messages', icon: 'mail-outline', label: 'Messages', hint: 'Chats and message requests' },
-    { link: '/feed', icon: 'newspaper-outline', label: 'Your feed', hint: 'From people and verses you follow' },
+    { link: '/feed', icon: 'newspaper-outline', label: 'Following', hint: 'Reflections from people and ayahs you follow' },
     { link: '/bookmarks', icon: 'bookmark-outline', label: 'Bookmarks', hint: 'Saved verses and reflections' },
     { link: '/likes', icon: 'heart-outline', label: 'Likes', hint: 'Verses and reflections you loved' },
     { link: '/following', icon: 'people-outline', label: 'Following', hint: 'People, verses, followers' },

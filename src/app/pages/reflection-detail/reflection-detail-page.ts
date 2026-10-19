@@ -16,13 +16,12 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
-import { Observable } from 'rxjs';
 import { errorMessage } from '../../core/api/api-client';
 import { LibraryApi } from '../../core/api/library-api';
 import { Page, Reflection, ReflectionComment } from '../../core/api/models';
 import { ReflectionApi, ReportReason } from '../../core/api/reflection-api';
 import { AuthService } from '../../core/auth/auth.service';
-import { getSurah, verseRef } from '../../core/quran/surahs';
+import { getSurah } from '../../core/quran/surahs';
 import { timeAgo } from '../../core/util/format';
 import { inputValue } from '../../core/util/forms';
 import { Loadable } from '../../core/util/loadable';
@@ -30,6 +29,7 @@ import { Avatar } from '../../shared/avatar';
 import { HeaderActions } from '../../shared/header-actions';
 import { NotifyService } from '../../shared/notify.service';
 import { ReflectionCard } from '../../shared/reflection-card';
+import { SideColumn } from '../../shared/side-column';
 import { StateView } from '../../shared/state-view';
 
 const REASONS: { value: ReportReason; label: string }[] = [
@@ -58,6 +58,7 @@ const REASONS: { value: ReportReason; label: string }[] = [
     Avatar,
     HeaderActions,
     ReflectionCard,
+    SideColumn,
     StateView,
   ],
   templateUrl: './reflection-detail-page.html',
@@ -106,55 +107,24 @@ export class ReflectionDetailPage {
     this.comments.load(this.api.comments(this.id()));
   }
 
-  private patch(changes: Partial<Reflection>): void {
+  protected patch(changes: Partial<Reflection>): void {
     this.reflection.data.update((r) => (r ? { ...r, ...changes } : r));
   }
 
-  /* ---------- Reactions ---------- */
-
-  protected toggleLike(): void {
-    const r = this.reflection.data();
-    if (!r || !this.auth.requireLogin()) return;
-    const on = !r.likedByMe;
-    this.patch({ likedByMe: on, likeCount: Math.max(0, r.likeCount + (on ? 1 : -1)) });
-    this.api.like(r.id, on).subscribe({
-      next: (res) => this.patch({ likedByMe: res.liked, likeCount: res.count }),
-      error: (err: unknown) => {
-        this.patch({ likedByMe: r.likedByMe, likeCount: r.likeCount });
-        // 409 means it was already in that state on the server.
-        if ((err as { status?: number }).status === 409) this.patch({ likedByMe: on });
-        else this.notify.show(errorMessage(err));
-      },
-    });
-  }
-
-  protected toggleBookmark(): void {
-    this.toggle('bookmarkedByMe', (on) => this.library.bookmarkReflection(this.id(), on), 'Saved to bookmarks', 'Removed from bookmarks');
-  }
+  /* ---------- Follow and send (likes and bookmarks are on the card) ---------- */
 
   protected toggleFollow(): void {
-    this.toggle('followedByMe', (on) => this.library.follow('reflection', this.id(), on), "You'll hear about new comments", 'Unfollowed');
-  }
-
-  private toggle(key: 'bookmarkedByMe' | 'followedByMe', request: (on: boolean) => Observable<unknown>, onText: string, offText: string): void {
     const r = this.reflection.data();
     if (!r || !this.auth.requireLogin()) return;
-    const on = !r[key];
-    this.patch({ [key]: on });
-    request(on).subscribe({
-      next: () => this.notify.show(on ? onText : offText),
+    const on = !r.followedByMe;
+    this.patch({ followedByMe: on });
+    this.library.follow('reflection', this.id(), on).subscribe({
+      next: () => this.notify.show(on ? "You'll hear about new replies" : 'Unfollowed'),
       error: (err: unknown) => {
-        this.patch({ [key]: !on });
+        this.patch({ followedByMe: !on });
         this.notify.show(errorMessage(err));
       },
     });
-  }
-
-  protected share(): void {
-    const r = this.reflection.data();
-    if (!r) return;
-    const url = `${location.origin}/reflections/${r.id}`;
-    this.notify.share(`Reflection on ${verseRef(r.surah, r.ayah)}`, `${r.text.slice(0, 200)}${r.text.length > 200 ? '…' : ''}\n\n${url}`);
   }
 
   protected sendInMessage(): void {
@@ -192,7 +162,7 @@ export class ReflectionDetailPage {
   }
 
   protected async deleteComment(c: ReflectionComment): Promise<void> {
-    if (!(await this.confirm('Delete this comment?', 'This cannot be undone.', 'Delete'))) return;
+    if (!(await this.confirm('Delete this reply?', 'This cannot be undone.', 'Delete'))) return;
     this.api.deleteComment(this.id(), c.id).subscribe({
       next: () => {
         this.comments.data.update((p) => (p ? { ...p, items: p.items.filter((x) => x.id !== c.id), total: Math.max(0, p.total - 1) } : p));
@@ -214,7 +184,7 @@ export class ReflectionDetailPage {
       next: () => {
         this.working.set(false);
         this.notify.show('Reflection deleted');
-        this.router.navigateByUrl('/reflections', { replaceUrl: true });
+        this.router.navigateByUrl('/home', { replaceUrl: true });
       },
       error: (err: unknown) => {
         this.working.set(false);
