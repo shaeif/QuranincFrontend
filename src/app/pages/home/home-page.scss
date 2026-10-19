@@ -9,23 +9,35 @@
   }
 }
 
-/* The tabs stay under the header while the timeline scrolls. */
-.sticky {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  /* Edge to edge on phones (Ionic sets width: 100%, which the negative margins alone don't undo). */
-  width: calc(100% + 32px);
-  margin: -16px -16px 0;
-  padding-inline: 16px;
-  background: rgba(var(--tb-bg-rgb), 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+/* Header and tabs read as one bar: one surface, one hairline under the tabs. */
+.tabs-bar {
+  --min-height: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  border-bottom: 1px solid var(--tb-line);
+}
+
+/* Same width and columns as .tb-columns, so the tabs sit over the timeline. */
+.tabs-wrap {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: grid;
 
   @media (min-width: 768px) {
-    width: 100%;
-    margin: -24px 0 0;
-    padding-inline: 0;
+    padding: 0 32px;
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: minmax(0, 640px) 320px;
+    justify-content: center;
+    gap: 28px;
+  }
+
+  ion-segment {
+    border-bottom: 0;
   }
 }
 

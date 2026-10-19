@@ -5,6 +5,15 @@
       <app-header-actions />
     </ion-buttons>
   </ion-toolbar>
+  <!-- The timeline tabs are part of the header, lined up with the timeline column. -->
+  <ion-toolbar class="tabs-bar">
+    <div class="tabs-wrap">
+      <ion-segment class="tb-tabs" mode="md" [value]="tab()" (ionChange)="setTab($event.detail.value)" aria-label="Timeline">
+        <ion-segment-button value="foryou">For you</ion-segment-button>
+        <ion-segment-button value="following">Following</ion-segment-button>
+      </ion-segment>
+    </div>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content class="tb-content">
@@ -14,11 +23,6 @@
 
   <div class="tb-columns">
     <main class="tb-main">
-      <ion-segment class="tb-tabs sticky" mode="md" [value]="tab()" (ionChange)="setTab($event.detail.value)" aria-label="Timeline">
-        <ion-segment-button value="foryou">For you</ion-segment-button>
-        <ion-segment-button value="following">Following</ion-segment-button>
-      </ion-segment>
-
       <!-- Write, or join -->
       @if (auth.user(); as user) {
         <a class="composer tb-glass" routerLink="/reflections/new">
