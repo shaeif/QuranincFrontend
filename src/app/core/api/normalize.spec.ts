@@ -72,6 +72,18 @@ describe('backend shapes from the API export', () => {
     const page = toPage({ page: 1, size: 20, total: 1, items: [{ _id: 'r1', _source: { id: 'r1', reflection: 'Text', surah_id: 94, ayah_id: 6, liked_by_me: true } }] }, toReflection);
     expect(page.items[0]).toMatchObject({ id: 'r1', text: 'Text', surah: 94, ayah: 6, likedByMe: true });
   });
+
+  it('reads comment times without a zone as UTC', () => {
+    const c = toComment({ id: 'c1', text: 'hi', author: { id: 'u1', username: 'amina_k' }, created_at: '2026-09-30T10:12:44' });
+    expect(c.createdAt).toBe(Date.UTC(2026, 8, 30, 10, 12, 44));
+    // An explicit zone is kept.
+    expect(toComment({ created_at: '2026-09-30T10:12:44+03:00' }).createdAt).toBe(Date.UTC(2026, 8, 30, 7, 12, 44));
+  });
+
+  it('turns sanitized comment and highlight HTML back into text', () => {
+    expect(toComment({ text: 'Patience &amp; prayer, <b>always</b>' }).text).toBe('Patience & prayer, always');
+    expect(toReflection({ reflection: 'x', highlight_text: 'don&#x27;t despair' }).highlightText).toBe("don't despair");
+  });
 });
 
 describe('author names', () => {

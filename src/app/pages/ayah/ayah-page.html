@@ -53,6 +53,14 @@
             }
           }
 
+          @if (topics.status() === 'ready' && topics.data()!.tags.length) {
+            <nav class="topics" aria-label="Topics on this ayah">
+              @for (t of topics.data()!.tags.slice(0, 8); track t.tag) {
+                <a class="tb-chip" routerLink="/reflections" [queryParams]="{ tag: t.tag }">#{{ t.tag }}</a>
+              }
+            </nav>
+          }
+
           <footer class="actions" role="group" aria-label="Ayah actions">
             <ion-button class="tb-glow" size="small" routerLink="/reflections/new" [queryParams]="{ surah: s.number, ayah: ayah() }">
               <ion-icon slot="start" name="create-outline" />Reflect

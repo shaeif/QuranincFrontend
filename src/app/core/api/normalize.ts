@@ -60,12 +60,16 @@ function str(...values: unknown[]): string | undefined {
   return undefined;
 }
 
+/** ISO date-time without a zone or offset. */
+const NAIVE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+
 function time(...values: unknown[]): number | undefined {
   for (const v of values) {
     const n = num(v);
     if (n !== undefined) return n < 1e12 ? n * 1000 : n;
     if (typeof v === 'string') {
-      const parsed = Date.parse(v);
+      // The API's ISO times are UTC but carry no zone ("2026-09-30T10:12:44"); read them as UTC, not local time.
+      const parsed = Date.parse(NAIVE_ISO.test(v) ? v + 'Z' : v);
       if (!Number.isNaN(parsed)) return parsed;
     }
   }
@@ -204,12 +208,14 @@ export function toAyahTexts(raw: unknown, offset = 0): Map<number, string> {
 export function toReflection(raw: unknown): Reflection {
   const r = flatten(raw);
   const author = isObject(r['author']) ? r['author'] : isObject(r['created_by']) ? (r['created_by'] as Json) : {};
+  // The API HTML-escapes the highlight.
+  const highlight = str(r['highlight_text']);
   return {
     id: str(r['id'], r['_id'], r['reflection_id']) ?? '',
     text: plainText(str(r['reflection'], r['text'], r['content']) ?? ''),
     surah: num(r['surah_id'], r['surah']) ?? 0,
     ayah: num(r['ayah_id'], r['ayah']) ?? 0,
-    highlightText: str(r['highlight_text']),
+    highlightText: highlight && plainText(highlight),
     tags: Array.isArray(r['tags']) ? r['tags'].filter((t): t is string => typeof t === 'string') : [],
     authorId: str(r['created_by_id'], author['id']),
     authorName:
@@ -232,7 +238,8 @@ export function toComment(raw: unknown): ReflectionComment {
   const author = isObject(c['author']) ? c['author'] : {};
   return {
     id: str(c['id']) ?? '',
-    text: str(c['text']) ?? '',
+    // Sanitized HTML, like reflection text.
+    text: plainText(str(c['text']) ?? ''),
     authorId: str(author['id'], c['user_id']),
     authorName: str(author['username'], c['username']) ?? 'Anonymous',
     authorPictureUrl: pictureUrl(author['profile_picture']),

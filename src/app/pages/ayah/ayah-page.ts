@@ -24,13 +24,13 @@ import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { errorMessage } from '../../core/api/api-client';
 import { Reflection, ReflectionSort } from '../../core/api/models';
-import { ReflectionApi } from '../../core/api/reflection-api';
+import { ReflectionApi, TagCloud } from '../../core/api/reflection-api';
 import { AuthService } from '../../core/auth/auth.service';
 import { LibraryService } from '../../core/auth/library.service';
 import { AyahTextService } from '../../core/quran/ayah-text.service';
 import { getSurah, verseRef } from '../../core/quran/surahs';
 import { ReadingSettingsService } from '../../core/settings/reading-settings.service';
-import { LoadStatus } from '../../core/util/loadable';
+import { LoadStatus, Loadable } from '../../core/util/loadable';
 import { AyahMarker } from '../../shared/ayah-marker';
 import { HeaderActions } from '../../shared/header-actions';
 import { NotifyService } from '../../shared/notify.service';
@@ -108,6 +108,9 @@ export class AyahPage {
   private page = 1;
   private sub?: Subscription;
 
+  /** Tags people used on this ayah's reflections. */
+  protected readonly topics = new Loadable<TagCloud>();
+
   protected readonly liked = computed(() => this.library.isLiked(this.surah()?.number ?? 0, this.ayah()));
   protected readonly bookmarked = computed(() => this.library.isBookmarked(this.surah()?.number ?? 0, this.ayah()));
   protected readonly followed = computed(() => this.library.isFollowed(this.surah()?.number ?? 0, this.ayah()));
@@ -119,6 +122,11 @@ export class AyahPage {
       const script = this.settings.arabicType();
       const withEnglish = this.settings.showTranslation();
       if (s && a) untracked(() => this.loadText(s, a, script, withEnglish));
+    });
+    effect(() => {
+      const s = this.surah()?.number;
+      const a = this.ayah();
+      if (s && a) untracked(() => this.topics.load(this.api.tags({ surahId: s, ayahId: a })));
     });
     effect(() => {
       this.surah();

@@ -98,3 +98,18 @@
   font-size: 14px;
   text-align: center;
 }
+
+.more {
+  padding: 14px 16px;
+  border: 0;
+  background: none;
+  color: var(--tb-gold);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--tb-field);
+  }
+}

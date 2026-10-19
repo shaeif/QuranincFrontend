@@ -59,16 +59,16 @@ export class ReflectionApi {
     );
   }
 
-  /** GET /reflection/<id>/comments (public) */
-  comments(id: string): Observable<Page<ReflectionComment>> {
+  /** GET /reflection/<id>/comments (public), oldest first. */
+  comments(id: string, page = 1, size = 50): Observable<Page<ReflectionComment>> {
     return this.api
-      .get(`/reflection/${encodeURIComponent(id)}/comments`, { size: 100 })
-      .pipe(map((raw) => toPage(raw, toComment, 1, 100)));
+      .get(`/reflection/${encodeURIComponent(id)}/comments`, { page, size })
+      .pipe(map((raw) => toPage(raw, toComment, page, size)));
   }
 
   /** GET /reflection/tags: most used first. */
-  tags(opts: { surahId?: number; prefix?: string } = {}): Observable<TagCloud> {
-    return this.api.get('/reflection/tags', { surah_id: opts.surahId, prefix: opts.prefix }).pipe(
+  tags(opts: { surahId?: number; ayahId?: number; prefix?: string } = {}): Observable<TagCloud> {
+    return this.api.get('/reflection/tags', { surah_id: opts.surahId, ayah_id: opts.ayahId, prefix: opts.prefix }).pipe(
       map((raw) => ({
         tags: extractArray(field(raw, 'tags') ?? raw).map(toTag).filter((t) => t.tag),
         reflections: Number(field(raw, 'reflections')) || 0,

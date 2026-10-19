@@ -101,6 +101,11 @@
                 } @empty {
                   <p class="none tb-muted">No replies yet. Start the conversation.</p>
                 }
+                @if (moreComments()) {
+                  <button type="button" class="more" (click)="loadMoreComments()" [disabled]="moreBusy()">
+                    @if (moreBusy()) { <ion-spinner name="dots" /> } @else { Show more replies }
+                  </button>
+                }
               }
               @case ('error') {
                 <app-state-view state="error" [message]="comments.error()" (retry)="loadComments()" />

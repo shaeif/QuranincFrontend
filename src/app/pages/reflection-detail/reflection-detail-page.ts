@@ -83,6 +83,8 @@ export class ReflectionDetailPage {
   protected readonly commentBusy = signal(false);
   protected readonly commentError = signal('');
   protected readonly working = signal(false);
+  protected readonly moreBusy = signal(false);
+  private commentPage = 1;
 
   protected readonly surah = computed(() => getSurah(this.reflection.data()?.surah ?? 0));
   protected readonly isAuthor = computed(() => {
@@ -104,7 +106,35 @@ export class ReflectionDetailPage {
   }
 
   protected loadComments(): void {
+    this.commentPage = 1;
     this.comments.load(this.api.comments(this.id()));
+  }
+
+  protected readonly moreComments = computed(() => {
+    const p = this.comments.data();
+    return !!p && p.items.length < p.total;
+  });
+
+  /** The next page of replies, after the ones shown (new ones may have been added here). */
+  protected loadMoreComments(): void {
+    if (this.moreBusy()) return;
+    this.moreBusy.set(true);
+    this.api.comments(this.id(), this.commentPage + 1).subscribe({
+      next: (res) => {
+        this.moreBusy.set(false);
+        this.commentPage++;
+        this.comments.data.update((p) => {
+          if (!p) return p;
+          const seen = new Set(p.items.map((c) => c.id));
+          const items = [...p.items, ...res.items.filter((c) => !seen.has(c.id))];
+          return { ...p, items, total: res.items.length ? res.total : items.length };
+        });
+      },
+      error: (err: unknown) => {
+        this.moreBusy.set(false);
+        this.notify.show(errorMessage(err));
+      },
+    });
   }
 
   protected patch(changes: Partial<Reflection>): void {
